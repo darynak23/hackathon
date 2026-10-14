@@ -1,52 +1,70 @@
-import { getParticipant, isPlayable } from '@/lib/bracket'
-import { roundName } from '@/lib/layout'
+import { useRef } from 'react'
+import type { RefObject } from 'react'
+import { ChampionCenter } from '@/components/bracket-ui/ChampionCenter'
+import { Connectors } from '@/components/bracket-ui/Connectors'
+import { MatchCard } from '@/components/bracket-ui/MatchCard'
+import { useConnectorLines } from '@/components/bracket-ui/useConnectorLines'
+import type { MatchRefMap } from '@/components/bracket-ui/useConnectorLines'
+import { getChampion } from '@/lib/bracket'
+import { columnHeight, roundName, splitBracket } from '@/lib/layout'
 import type { Match, Tournament } from '@/types'
 
-// Eies av person 3. Props er låst, innholdet byttes ut med det speilvendte treet.
+// Eies av person 3. Props er låst, innholdet er det speilvendte treet.
 
 export interface BracketProps {
   tournament: Tournament
   onMatchClick: (match: Match) => void
 }
 
+/**
+ * Det speilvendte utslagstreet: venstre halvdel fra runde 1 og innover,
+ * finalen i midten, høyre halvdel speilvendt.
+ */
 export function Bracket({ tournament, onMatchClick }: BracketProps) {
-  const total = tournament.rounds.length
+  const containerRef = useRef<HTMLDivElement>(null)
+  const matchRefs = useRef<MatchRefMap>(new Map())
+
+  const { columns, roundCount, round0CountPerSide } = splitBracket(tournament)
+  const lines = useConnectorLines({ containerRef, matchRefs, tournament, columns })
+
+  if (columns.length === 0) {
+    return <p className="text-muted-foreground italic">Ingen kamper å vise ennå.</p>
+  }
+
+  const champion = getChampion(tournament)
+
   return (
-    <div className="flex gap-6 overflow-x-auto pb-4">
-      {tournament.rounds.map((round, r) => (
-        <div key={r} className="flex min-w-48 flex-col justify-around gap-3">
-          <h3 className="text-sm font-semibold text-muted-foreground">{roundName(r, total)}</h3>
-          {round.map((match) => {
-            const a = getParticipant(tournament, match.participantA)
-            const b = getParticipant(tournament, match.participantB)
-            const playable = isPlayable(match)
-            return (
-              <button
+    <div ref={containerRef} className="relative flex items-start gap-12 overflow-x-auto p-2">
+      <Connectors lines={lines} />
+      {columns.map((column) => (
+        <div key={`${column.side}-${column.round}`} className="flex flex-col items-center">
+          <h3 className="mb-3 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            {roundName(column.round, roundCount)}
+          </h3>
+          <div
+            className="flex flex-col justify-around"
+            style={{ height: columnHeight(round0CountPerSide) }}
+          >
+            {column.matches.map((match) => (
+              <MatchCard
                 key={match.id}
-                type="button"
-                disabled={!playable}
-                onClick={() => onMatchClick(match)}
-                className="rounded-md border bg-card p-2 text-left text-sm enabled:hover:border-ring disabled:opacity-60"
-              >
-                {[
-                  { p: a, score: match.scoreA, id: match.participantA },
-                  { p: b, score: match.scoreB, id: match.participantB },
-                ].map((side, i) => (
-                  <div
-                    key={i}
-                    className={`flex justify-between ${
-                      side.id && side.id === match.winnerId ? 'font-bold' : ''
-                    }`}
-                  >
-                    <span>{side.p?.name ?? (match.isWalkover ? 'Walkover' : 'Venter')}</span>
-                    {tournament.scoring === 'points' && side.score !== null && <span>{side.score}</span>}
-                  </div>
-                ))}
-              </button>
-            )
-          })}
+                ref={(el) => registerMatchRef(matchRefs, match.id, el)}
+                tournament={tournament}
+                match={match}
+                onClick={onMatchClick}
+              />
+            ))}
+          </div>
+          {column.side === 'final' && <ChampionCenter winner={champion} />}
         </div>
       ))}
     </div>
   )
+}
+
+function registerMatchRef(mapRef: RefObject<MatchRefMap>, id: string, el: HTMLDivElement | null) {
+  const map = mapRef.current
+  if (!map) return
+  if (el) map.set(id, el)
+  else map.delete(id)
 }
