@@ -4,14 +4,17 @@ import type { Participant } from '@/types'
 
 export interface ChampionCenterProps {
   winner: Participant | null
+  /** Av når treet tegnes for bildeeksport. */
+  celebrate?: boolean
 }
 
 /** Pokal og vinnernavn i midten av treet, med konfetti når finalen er avgjort. */
-export function ChampionCenter({ winner }: ChampionCenterProps) {
+export function ChampionCenter({ winner, celebrate = true }: ChampionCenterProps) {
   const ref = useRef<HTMLDivElement>(null)
   const celebratedFor = useRef<string | null>(null)
 
   useEffect(() => {
+    if (!celebrate) return
     if (!winner) {
       celebratedFor.current = null
       return
@@ -31,7 +34,7 @@ export function ChampionCenter({ winner }: ChampionCenterProps) {
       origin: { x, y },
       colors: ['#e8a838', '#f2f6f3', '#6f8479'],
     })
-  }, [winner])
+  }, [winner, celebrate])
 
   return (
     <div ref={ref} className="flex min-w-36 flex-col items-center gap-1 p-2 text-center">

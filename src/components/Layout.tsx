@@ -1,10 +1,11 @@
-import { Moon, Plus, Sun, Trophy } from 'lucide-react'
+import { Megaphone, Moon, Plus, Sun, Trophy } from 'lucide-react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { useTheme } from '@/hooks/useTheme'
+import { useDramaticMode, useTheme } from '@/hooks/useTheme'
 
 export function Layout() {
   const { theme, toggle } = useTheme()
+  const { dramatic, toggle: toggleDramatic } = useDramaticMode()
 
   return (
     <div className="relative isolate mx-auto flex min-h-svh max-w-[1400px] flex-col gap-8 px-4 py-5 sm:px-6 md:px-10 md:py-8">
@@ -34,6 +35,16 @@ export function Layout() {
             <Link to="/ny">
               <Plus /> Ny turnering
             </Link>
+          </Button>
+          <Button
+            variant={dramatic ? 'default' : 'ghost'}
+            size="icon"
+            onClick={toggleDramatic}
+            aria-pressed={dramatic}
+            aria-label="Dramatic mode"
+            title={dramatic ? 'Slå av dramatic mode' : 'Dramatic mode: all tekst i store bokstaver'}
+          >
+            <Megaphone />
           </Button>
           <Button
             variant="ghost"

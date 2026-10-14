@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { Badge } from '@/components/Badge'
 import { Bracket } from '@/components/Bracket'
 import { ChampionCenter } from '@/components/bracket-ui/ChampionCenter'
+import { ExportImageButton } from '@/components/ExportImageButton'
 import { ResultDialog } from '@/components/ResultDialog'
 import { StandingsTable } from '@/components/swiss/StandingsTable'
 import { SwissView } from '@/components/swiss/SwissView'
@@ -101,11 +102,12 @@ export function TournamentPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ExportImageButton tournament={tournament} onError={setError} />
           <Button
             variant="outline"
             onClick={() => downloadJson(`${tournament.name}.json`, exportTournamentsJson([tournament]))}
           >
-            <Download /> Eksporter
+            <Download /> JSON
           </Button>
           <Button
             variant="outline"

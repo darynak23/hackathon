@@ -8,8 +8,9 @@
     <script>
       try {
         const stored = localStorage.getItem('nome-tema')
-        const dark = stored ? stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+        const dark = stored ? stored === 'on' || stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
         document.documentElement.classList.toggle('dark', dark)
+        document.documentElement.classList.toggle('dramatic', localStorage.getItem('nome-dramatisk') === 'on')
       } catch {
         document.documentElement.classList.add('dark')
       }

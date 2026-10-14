@@ -14,13 +14,15 @@ import type { Match, Tournament } from '@/types'
 export interface BracketProps {
   tournament: Tournament
   onMatchClick: (match: Match) => void
+  /** Konfetti når finalen er avgjort. Av ved bildeeksport. */
+  celebrate?: boolean
 }
 
 /**
  * Det speilvendte utslagstreet: venstre halvdel fra runde 1 og innover,
  * finalen i midten, høyre halvdel speilvendt.
  */
-export function Bracket({ tournament, onMatchClick }: BracketProps) {
+export function Bracket({ tournament, onMatchClick, celebrate = true }: BracketProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const matchRefs = useRef<MatchRefMap>(new Map())
 
@@ -56,7 +58,7 @@ export function Bracket({ tournament, onMatchClick }: BracketProps) {
               />
             ))}
           </div>
-          {column.side === 'final' && <ChampionCenter winner={champion} />}
+          {column.side === 'final' && <ChampionCenter winner={champion} celebrate={celebrate} />}
         </div>
       ))}
     </div>

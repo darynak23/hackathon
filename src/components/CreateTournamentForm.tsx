@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { ArrowDown, ArrowUp, Shuffle } from 'lucide-react'
+import { ArrowDown, ArrowUp, Shuffle, Wand2 } from 'lucide-react'
+import { cn } from 'cn'
 import { SegmentedControl } from '@/components/SegmentedControl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { shuffle } from '@/lib/bracket'
+import { suggestNames } from '@/lib/names'
 import { parseParticipants } from '@/lib/participants'
 import { advanceOptions } from '@/lib/tournament'
 import {
@@ -96,6 +98,7 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
   const [text, setText] = useState('')
   const [order, setOrder] = useState<string[]>([])
   const [submitted, setSubmitted] = useState(false)
+  const [suggestions, setSuggestions] = useState<string[]>([])
 
   const parsed = useMemo(() => parseParticipants(text, kind), [text, kind])
   const byName = new Map(parsed.map((p) => [p.name, p]))
@@ -162,12 +165,40 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
     <form className="grid gap-5" onSubmit={submit} noValidate>
       <Section step={1} title="Turneringen">
         <Field label="Navn">
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="F.eks. Lunsjcup høst 2026"
-            autoFocus
-          />
+          <div className="flex gap-2">
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="F.eks. Lunsjcup høst 2026"
+              aria-label="Navn"
+              autoFocus
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0"
+              onClick={() => setSuggestions(suggestNames({ sport, customSport, format }))}
+            >
+              <Wand2 /> {suggestions.length > 0 ? 'Nye forslag' : 'Foreslå navn'}
+            </Button>
+          </div>
+          {suggestions.length > 0 && (
+            <div className="flex flex-wrap gap-1.5" aria-label="Navneforslag">
+              {suggestions.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setName(s)}
+                  className={cn(
+                    'rounded-full border px-3 py-1 text-sm transition-colors outline-none hover:border-amber hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50',
+                    name === s ? 'border-amber bg-accent text-foreground' : 'bg-card text-muted-foreground',
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </Field>
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Sport">

@@ -93,6 +93,13 @@
   box-sizing: border-box;
 }
 
+/* DRAMATIC MODE: all tekst i store bokstaver, også i skjemafelt og plassholdere. */
+.dramatic *,
+.dramatic *::placeholder {
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em;
+}
+
 body {
   margin: 0;
   min-width: 320px;

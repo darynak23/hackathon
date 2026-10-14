@@ -1,26 +1,30 @@
 import { useCallback, useState } from 'react'
 
-export type Theme = 'light' | 'dark'
+/** En av/på-innstilling som lagres som en klasse på <html> og i localStorage. index.html setter den før første render. */
+function useHtmlClass(className: string, storageKey: string) {
+  const [enabled, setEnabled] = useState(() => document.documentElement.classList.contains(className))
 
-const STORAGE_KEY = 'nome-tema'
+  const toggle = useCallback(() => {
+    const next = !document.documentElement.classList.contains(className)
+    document.documentElement.classList.toggle(className, next)
+    try {
+      localStorage.setItem(storageKey, next ? 'on' : 'off')
+    } catch {
+      // Privat modus uten localStorage: innstillingen gjelder bare denne økten.
+    }
+    setEnabled(next)
+  }, [className, storageKey])
 
-function currentTheme(): Theme {
-  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  return [enabled, toggle] as const
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(currentTheme)
+  const [isDark, toggle] = useHtmlClass('dark', 'nome-tema')
+  return { theme: isDark ? ('dark' as const) : ('light' as const), toggle }
+}
 
-  const toggle = useCallback(() => {
-    const next: Theme = currentTheme() === 'dark' ? 'light' : 'dark'
-    document.documentElement.classList.toggle('dark', next === 'dark')
-    try {
-      localStorage.setItem(STORAGE_KEY, next)
-    } catch {
-      // Privat modus uten localStorage: temaet gjelder bare denne økten.
-    }
-    setTheme(next)
-  }, [])
-
-  return { theme, toggle }
+/** DRAMATIC MODE: all tekst i store bokstaver. */
+export function useDramaticMode() {
+  const [dramatic, toggle] = useHtmlClass('dramatic', 'nome-dramatisk')
+  return { dramatic, toggle }
 }
