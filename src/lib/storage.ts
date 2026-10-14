@@ -1,4 +1,4 @@
-import type { Tournament } from '@/types'
+import type { Match, Tournament, TournamentFormat } from '@/types'
 
 const STORAGE_KEY = 'nome-turnering:v1'
 
@@ -13,12 +13,45 @@ function isTournament(value: unknown): value is Tournament {
   )
 }
 
+type StoredMatch = Match & { isWalkover?: boolean; scoreA?: number | null; scoreB?: number | null }
+
+function normalizeMatch(raw: StoredMatch): Match {
+  const { isWalkover, scoreA, scoreB, ...rest } = raw
+  return {
+    ...rest,
+    walkover: rest.walkover ?? isWalkover ?? false,
+    ...(typeof scoreA === 'number' ? { scoreA } : {}),
+    ...(typeof scoreB === 'number' ? { scoreB } : {}),
+  }
+}
+
+/** Oppgraderer turneringer lagret med eldre versjoner av datamodellen. */
+function normalize(raw: Tournament): Tournament {
+  const format = raw.format as TournamentFormat | 'singleElimination' | undefined
+  return {
+    ...raw,
+    format: !format || format === 'singleElimination' ? 'elimination' : format,
+    seedingMode: raw.seedingMode ?? 'seeded',
+    participants: raw.participants.map((p, i) => ({ ...p, seed: p.seed ?? i + 1 })),
+    rounds: raw.rounds.map((round) => round.map((m) => normalizeMatch(m as StoredMatch))),
+    ...(raw.swiss
+      ? {
+          swiss: {
+            ...raw.swiss,
+            rounds: raw.swiss.rounds.map((round) => round.map((m) => normalizeMatch(m as StoredMatch))),
+          },
+        }
+      : {}),
+    updatedAt: raw.updatedAt ?? raw.createdAt,
+  }
+}
+
 /** Tolker en JSON-streng. Ugyldige data gir tom liste. */
 export function parseTournaments(raw: string | null): Tournament[] {
   if (!raw) return []
   try {
     const data: unknown = JSON.parse(raw)
-    return Array.isArray(data) ? data.filter(isTournament) : []
+    return Array.isArray(data) ? data.filter(isTournament).map(normalize) : []
   } catch {
     return []
   }
@@ -65,7 +98,7 @@ export function importTournamentsJson(raw: string): number {
   } catch {
     throw new Error('Filen er ikke gyldig JSON')
   }
-  const list = (Array.isArray(data) ? data : [data]).filter(isTournament)
+  const list = (Array.isArray(data) ? data : [data]).filter(isTournament).map(normalize)
   if (list.length === 0) throw new Error('Fant ingen turneringer i filen')
   const byId = new Map(loadTournaments().map((t) => [t.id, t]))
   for (const t of list) byId.set(t.id, t)

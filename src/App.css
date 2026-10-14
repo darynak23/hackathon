@@ -14,10 +14,7 @@
   position: fixed;
   inset: 0;
   z-index: -1;
-  background:
-    radial-gradient(ellipse 80% 50% at 10% 20%, rgba(232, 168, 56, 0.18), transparent 55%),
-    radial-gradient(ellipse 70% 45% at 90% 80%, rgba(34, 120, 92, 0.35), transparent 50%),
-    linear-gradient(160deg, #0b1a14 0%, #132820 42%, #1a3328 100%);
+  background: var(--atmosphere);
   animation: atmosphere-shift 14s ease-in-out infinite alternate;
 }
 
@@ -112,7 +109,7 @@
   padding: 1.15rem 1.25rem;
   border: 1px solid var(--line);
   border-radius: 0.35rem;
-  background: rgba(8, 22, 17, 0.55);
+  background: var(--card);
   color: var(--ink);
   text-align: left;
   cursor: pointer;
@@ -125,7 +122,7 @@
 
 .setup-btn:hover {
   border-color: rgba(232, 168, 56, 0.55);
-  background: rgba(20, 48, 36, 0.85);
+  background: var(--accent);
   transform: translateY(-2px);
 }
 

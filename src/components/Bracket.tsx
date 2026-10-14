@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import type { RefObject } from 'react'
 import { ChampionCenter } from '@/components/bracket-ui/ChampionCenter'
 import { Connectors } from '@/components/bracket-ui/Connectors'
@@ -24,7 +24,8 @@ export function Bracket({ tournament, onMatchClick }: BracketProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const matchRefs = useRef<MatchRefMap>(new Map())
 
-  const { columns, roundCount, round0CountPerSide } = splitBracket(tournament)
+  // Ny columns-referanse på hver render ville startet måling av strekene på nytt i en evig løkke.
+  const { columns, roundCount, round0CountPerSide } = useMemo(() => splitBracket(tournament), [tournament])
   const lines = useConnectorLines({ containerRef, matchRefs, tournament, columns })
 
   if (columns.length === 0) {

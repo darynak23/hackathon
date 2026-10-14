@@ -1,80 +1,103 @@
-import type { Match, Participant, Tournament } from '@/types'
+import type { Match, NewTournamentInput, Tournament } from '@/types'
+import { getParticipant, isPlayable } from './bracket'
+import * as tournament from './tournament'
 
-function match(
-  round: number,
-  position: number,
-  participantA: string | null,
-  participantB: string | null,
-  result: { winnerId: string; scoreA?: number; scoreB?: number } | null = null,
-  isWalkover = false,
-): Match {
-  return {
-    id: `r${round}-p${position}`,
-    round,
-    position,
-    participantA,
-    participantB,
-    scoreA: result?.scoreA ?? null,
-    scoreB: result?.scoreB ?? null,
-    winnerId: result?.winnerId ?? null,
-    isWalkover,
+function hash(text: string): number {
+  let h = 2166136261
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)
+  return h >>> 0
+}
+
+/** Forutsigbart resultat: best seed vinner som regel, men hver tredje kamp er en overraskelse. */
+function scriptedResult(t: Tournament, match: Match) {
+  const a = getParticipant(t, match.participantA)!
+  const b = getParticipant(t, match.participantB)!
+  const h = hash(`${t.name}:${match.id}`)
+  const favourite = a.seed < b.seed ? a : b
+  const underdog = favourite === a ? b : a
+  const winner = h % 3 === 0 ? underdog : favourite
+  if (t.scoring === 'winLoss') return { winnerId: winner.id }
+  const high = 60 + (h % 25)
+  const low = high - 1 - ((h >> 5) % 14)
+  return winner === a
+    ? { winnerId: a.id, scoreA: high, scoreB: low }
+    : { winnerId: b.id, scoreA: low, scoreB: high }
+}
+
+/** Spiller de neste `limit` spillbare kampene (alle hvis udefinert), og starter nye Swiss-runder og sluttspill underveis. */
+export function simulate(t: Tournament, limit = Infinity): Tournament {
+  let played = 0
+  for (;;) {
+    const open = [...(t.swiss?.rounds.flat() ?? []), ...t.rounds.flat()].find(
+      (m) => tournament.isEditable(t, m) && isPlayable(m) && m.winnerId === null && !m.isDraw,
+    )
+    if (open && played < limit) {
+      t = tournament.recordResult(t, open.id, scriptedResult(t, open))
+      played++
+      continue
+    }
+    if (played >= limit) return t
+    if (tournament.canStartNextSwissRound(t)) t = tournament.startNextSwissRound(t)
+    else if (tournament.canStartPlayoffs(t)) t = tournament.startPlayoffs(t)
+    else return t
   }
 }
 
-function people(names: string[]): Participant[] {
-  return names.map((name, i) => ({ id: `p${i}`, name }))
+function fixture(id: string, input: NewTournamentInput, played = Infinity): Tournament {
+  const t = simulate(tournament.startTournament(input), played)
+  const stamp = '2026-10-14T08:00:00.000Z'
+  return { ...t, id, createdAt: stamp, updatedAt: stamp }
 }
 
-/** Sjakk, 8 spillere, vinner/taper. Runde 1 ferdig, semifinalen halvveis. */
-export const chessFixture: Tournament = {
-  id: 'fixture-chess',
+const chessPlayers = ['Magnus', 'Hikaru', 'Fabiano', 'Ding', 'Alireza', 'Ian', 'Wesley', 'Anish']
+
+/** Sjakk, 8 spillere, utslag, vinner/taper. Ferdig spilt. */
+export const chessFixture = fixture('fixture-chess', {
   name: 'Lynsjakk fredag',
   sport: 'sjakk',
   scoring: 'winLoss',
   participantKind: 'individual',
-  format: 'singleElimination',
-  participants: people(['Magnus', 'Hikaru', 'Fabiano', 'Ding', 'Alireza', 'Ian', 'Wesley', 'Anish']),
-  rounds: [
-    [
-      match(0, 0, 'p0', 'p1', { winnerId: 'p0' }),
-      match(0, 1, 'p2', 'p3', { winnerId: 'p3' }),
-      match(0, 2, 'p4', 'p5', { winnerId: 'p4' }),
-      match(0, 3, 'p6', 'p7', { winnerId: 'p7' }),
-    ],
-    [match(1, 0, 'p0', 'p3', { winnerId: 'p0' }), match(1, 1, 'p4', 'p7')],
-    [match(2, 0, 'p0', null)],
-  ],
-  createdAt: '2026-10-14T08:00:00.000Z',
-  updatedAt: '2026-10-14T08:00:00.000Z',
-}
+  format: 'elimination',
+  seedingMode: 'seeded',
+  participants: chessPlayers,
+})
 
-/** Basket, 5 lag, poeng. 8 plasser, 3 walkovers, 3 lag rett til runde 2. */
-export const basketFixture: Tournament = {
-  id: 'fixture-basket',
-  name: 'Basketcup lunsj',
-  sport: 'basket',
-  scoring: 'points',
-  participantKind: 'team',
-  format: 'singleElimination',
-  participants: [
-    { id: 'p0', name: 'Økonomi', members: ['Kari', 'Ola'] },
-    { id: 'p1', name: 'Utvikling', members: ['Per', 'Pål'] },
-    { id: 'p2', name: 'Salg', members: ['Espen', 'Askeladd'] },
-    { id: 'p3', name: 'Innkjøp', members: ['Nora', 'Emil'] },
-    { id: 'p4', name: 'Ledelse', members: ['Sofie', 'Jonas'] },
-  ],
-  rounds: [
-    [
-      match(0, 0, 'p0', 'p1', { winnerId: 'p1', scoreA: 58, scoreB: 62 }),
-      match(0, 1, 'p2', null, { winnerId: 'p2' }, true),
-      match(0, 2, 'p3', null, { winnerId: 'p3' }, true),
-      match(0, 3, 'p4', null, { winnerId: 'p4' }, true),
+/** Basket, 5 lag, utslag, poeng. 8 plasser, 3 walkovers. Første kamp spilt. */
+export const basketFixture = fixture(
+  'fixture-basket',
+  {
+    name: 'Basketcup lunsj',
+    sport: 'basket',
+    scoring: 'points',
+    participantKind: 'team',
+    format: 'elimination',
+    seedingMode: 'seeded',
+    participants: [
+      { name: 'Økonomi', members: ['Kari', 'Ola'] },
+      { name: 'Utvikling', members: ['Per', 'Pål'] },
+      { name: 'Salg', members: ['Espen', 'Askeladd'] },
+      { name: 'Innkjøp', members: ['Nora', 'Emil'] },
+      { name: 'Ledelse', members: ['Sofie', 'Jonas'] },
     ],
-    [match(1, 0, 'p1', 'p2'), match(1, 1, 'p3', 'p4')],
-    [match(2, 0, null, null)],
-  ],
-  createdAt: '2026-10-14T08:00:00.000Z',
-  updatedAt: '2026-10-14T08:00:00.000Z',
-}
+  },
+  1,
+)
 
-export const fixtures: Tournament[] = [chessFixture, basketFixture]
+/** Sjakk, 16 spillere, Swiss med sluttspill for 8. Midt i Swiss-fasen. */
+export const swissFixture = fixture(
+  'fixture-swiss',
+  {
+    name: 'Swiss-mesterskap',
+    sport: 'sjakk',
+    scoring: 'winLoss',
+    participantKind: 'individual',
+    format: 'swissThenElimination',
+    seedingMode: 'seeded',
+    swiss: { winsToAdvance: 3, lossesToEliminate: 3 },
+    advanceCount: 8,
+    participants: [...chessPlayers, 'Judit', 'Hou', 'Ju', 'Vishy', 'Levon', 'Teimour', 'Richard', 'Maxime'],
+  },
+  20,
+)
+
+export const fixtures: Tournament[] = [chessFixture, basketFixture, swissFixture]
