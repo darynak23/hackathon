@@ -1,4 +1,14 @@
-export type Sport = 'basket' | 'sjakk' | 'annet'
+export type Sport =
+  | 'basket'
+  | 'fotball'
+  | 'handball'
+  | 'volleyball'
+  | 'ishockey'
+  | 'bordtennis'
+  | 'tennis'
+  | 'sjakk'
+  | 'esport'
+  | 'annet'
 
 /** 'points': begge får poeng, høyest vinner. 'winLoss': bare vinner/taper. */
 export type ScoringMode = 'points' | 'winLoss'
@@ -72,7 +82,14 @@ export type ValidationResult = { ok: true } | { ok: false; error: string }
 
 export const SPORT_LABELS: Record<Sport, string> = {
   basket: 'Basket',
+  fotball: 'Fotball',
+  handball: 'Håndball',
+  volleyball: 'Volleyball',
+  ishockey: 'Ishockey',
+  bordtennis: 'Bordtennis',
+  tennis: 'Tennis',
   sjakk: 'Sjakk',
+  esport: 'E-sport',
   annet: 'Annet',
 }
 
@@ -82,6 +99,13 @@ export function sportLabel(t: Pick<Tournament, 'sport' | 'customSport'>): string
 
 export const DEFAULT_SCORING: Record<Sport, ScoringMode> = {
   basket: 'points',
+  fotball: 'points',
+  handball: 'points',
+  volleyball: 'points',
+  ishockey: 'points',
+  bordtennis: 'points',
+  tennis: 'winLoss',
   sjakk: 'winLoss',
+  esport: 'winLoss',
   annet: 'winLoss',
 }
