@@ -1,4 +1,5 @@
 import type { Match, Tournament } from '@/types'
+import { tx } from '@/lib/i18n'
 
 // Eies av person 3.
 //
@@ -66,8 +67,8 @@ export function splitBracket(tournament: Tournament): BracketLayout {
 /** "Runde 1" / "Kvartfinale" / "Semifinale" / "Finale", regnet fra avstand til finalen. */
 export function roundName(roundIndex: number, totalRounds: number): string {
   const fromEnd = totalRounds - roundIndex
-  if (fromEnd === 1) return 'Finale'
-  if (fromEnd === 2) return 'Semifinale'
-  if (fromEnd === 3) return 'Kvartfinale'
-  return `Runde ${roundIndex + 1}`
+  if (fromEnd === 1) return tx('Finale', 'Final')
+  if (fromEnd === 2) return tx('Semifinale', 'Semifinal')
+  if (fromEnd === 3) return tx('Kvartfinale', 'Quarterfinal')
+  return tx(`Runde ${roundIndex + 1}`, `Round ${roundIndex + 1}`)
 }

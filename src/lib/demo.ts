@@ -1,6 +1,7 @@
 import type { Tournament } from '@/types'
 import { simulate } from './fixtures'
 import { startTournament } from './tournament'
+import { tx } from '@/lib/i18n'
 
 /**
  * Demoen fra manuset: en ferdig sjakkturnering, og en basketturnering med Swiss
@@ -9,7 +10,7 @@ import { startTournament } from './tournament'
 export function createDemoTournaments(): Tournament[] {
   const chess = simulate(
     startTournament({
-      name: 'Sjakk-NM for ansatte',
+      name: tx('Sjakk-NM for ansatte', 'Employee Chess Championship'),
       sport: 'sjakk',
       scoring: 'winLoss',
       participantKind: 'individual',
@@ -19,9 +20,18 @@ export function createDemoTournaments(): Tournament[] {
     }),
   )
 
-  const basketTeams = ['Økonomi', 'Utvikling', 'Salg', 'Innkjøp', 'Ledelse', 'HR', 'Lager', 'Kundeservice']
+  const basketTeams = [
+    tx('Økonomi', 'Finance'),
+    tx('Utvikling', 'Development'),
+    tx('Salg', 'Sales'),
+    tx('Innkjøp', 'Procurement'),
+    tx('Ledelse', 'Management'),
+    'HR',
+    tx('Lager', 'Warehouse'),
+    tx('Kundeservice', 'Customer service'),
+  ]
   const basket = startTournament({
-    name: 'Basketcup Nome Games',
+    name: tx('Basketcup Nome Games', 'Nome Games Basketball Cup'),
     sport: 'basket',
     scoring: 'points',
     participantKind: 'team',

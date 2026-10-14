@@ -9,13 +9,15 @@ import { StandingsTable } from '@/components/swiss/StandingsTable'
 import { SwissView } from '@/components/swiss/SwissView'
 import { Button } from '@/components/ui/button'
 import { getWinner, statusLabel } from '@/lib/tournament'
-import { FORMAT_LABELS, SEEDING_LABELS, sportLabel, type Tournament } from '@/types'
+import { formatLabel, seedingLabel, sportLabel, type Tournament } from '@/types'
+import { useLanguage } from '@/hooks/useLanguage'
+import { formatDateTime, tx } from '@/lib/i18n'
 
 const noop = () => {}
 
 function fileName(t: Tournament) {
-  const slug = t.name.toLowerCase().replace(/[^a-z0-9æøå]+/g, '-').replace(/^-|-$/g, '') || 'turnering'
-  return `${slug}-${getWinner(t) ? 'resultat' : 'status'}.png`
+  const slug = t.name.toLowerCase().replace(/[^a-z0-9æøå]+/g, '-').replace(/^-|-$/g, '') || tx('turnering', 'tournament')
+  return `${slug}-${getWinner(t) ? tx('resultat', 'result') : 'status'}.png`
 }
 
 /** Venter til strekene i treet er målt og fontene er lastet. */
@@ -29,6 +31,7 @@ async function settle() {
  * er underveis eller ferdig. Innholdet tegnes uten rullefelt utenfor skjermen.
  */
 export function ExportImageButton({ tournament, onError }: { tournament: Tournament; onError: (message: string) => void }) {
+  useLanguage()
   const [exporting, setExporting] = useState(false)
   const sheetRef = useRef<HTMLDivElement>(null)
   const onErrorRef = useRef(onError)
@@ -55,7 +58,7 @@ export function ExportImageButton({ tournament, onError }: { tournament: Tournam
         link.download = fileName(tournament)
         link.click()
       } catch {
-        onErrorRef.current('Klarte ikke å lage bildet. Prøv igjen.')
+        onErrorRef.current(tx('Klarte ikke å lage bildet. Prøv igjen.', 'Could not create the image. Try again.'))
       } finally {
         if (!cancelled) setExporting(false)
       }
@@ -68,7 +71,7 @@ export function ExportImageButton({ tournament, onError }: { tournament: Tournam
   return (
     <>
       <Button variant="outline" onClick={() => setExporting(true)} disabled={exporting}>
-        {exporting ? <Loader2 className="animate-spin" /> : <ImageDown />} Last ned bilde
+        {exporting ? <Loader2 className="animate-spin" /> : <ImageDown />} {tx('Last ned bilde', 'Download image')}
       </Button>
       {exporting &&
         createPortal(
@@ -86,7 +89,7 @@ export function ExportImageButton({ tournament, onError }: { tournament: Tournam
 
 function ExportSheet({ tournament, ref }: { tournament: Tournament; ref: Ref<HTMLDivElement> }) {
   const winner = getWinner(tournament)
-  const updated = new Date(tournament.updatedAt).toLocaleString('nb-NO', { dateStyle: 'medium', timeStyle: 'short' })
+  const updated = formatDateTime(tournament.updatedAt)
   const hasPlayoffs = tournament.rounds.length > 0
 
   return (
@@ -106,20 +109,21 @@ function ExportSheet({ tournament, ref }: { tournament: Tournament; ref: Ref<HTM
           <h1 className="font-display text-5xl font-bold tracking-tight">{tournament.name}</h1>
           <div className="flex flex-wrap gap-1.5">
             <Badge tone="amber">{sportLabel(tournament)}</Badge>
-            <Badge>{FORMAT_LABELS[tournament.format]}</Badge>
-            <Badge>{SEEDING_LABELS[tournament.seedingMode]}</Badge>
-            <Badge>{tournament.scoring === 'points' ? 'Poeng' : 'Vinner/taper'}</Badge>
+            <Badge>{formatLabel(tournament.format)}</Badge>
+            <Badge>{seedingLabel(tournament.seedingMode)}</Badge>
+            <Badge>{tournament.scoring === 'points' ? tx('Poeng', 'Points') : tx('Vinner/taper', 'Win/loss')}</Badge>
             <Badge>
-              {tournament.participants.length} {tournament.participantKind === 'team' ? 'lag' : 'deltakere'}
+              {tournament.participants.length}{' '}
+              {tournament.participantKind === 'team' ? tx('lag', 'teams') : tx('deltakere', 'participants')}
             </Badge>
           </div>
         </div>
         <div className="grid justify-items-end gap-1 text-right">
           <Badge tone={winner ? 'win' : 'amber'} className="px-3 py-1 text-sm">
-            {winner ? 'Ferdig' : 'Underveis'}
+            {winner ? tx('Ferdig', 'Finished') : tx('Underveis', 'In progress')}
           </Badge>
-          <p className="text-lg font-semibold">{winner ? `Vinner: ${winner.name}` : statusLabel(tournament)}</p>
-          <p className="text-sm text-muted-foreground">Oppdatert {updated}</p>
+          <p className="text-lg font-semibold">{winner ? tx(`Vinner: ${winner.name}`, `Winner: ${winner.name}`) : statusLabel(tournament)}</p>
+          <p className="text-sm text-muted-foreground">{tx('Oppdatert', 'Updated')} {updated}</p>
         </div>
       </header>
 
@@ -131,7 +135,7 @@ function ExportSheet({ tournament, ref }: { tournament: Tournament; ref: Ref<HTM
 
       {tournament.swiss && (
         <section className="grid gap-4">
-          <h2 className="font-display text-2xl font-semibold">Swiss-fase</h2>
+          <h2 className="font-display text-2xl font-semibold">{tx('Swiss-fase', 'Swiss stage')}</h2>
           <SwissView tournament={tournament} onMatchClick={noop} />
           <StandingsTable tournament={tournament} />
         </section>
@@ -139,7 +143,7 @@ function ExportSheet({ tournament, ref }: { tournament: Tournament; ref: Ref<HTM
 
       {hasPlayoffs && (
         <section className="grid gap-4">
-          {tournament.swiss && <h2 className="font-display text-2xl font-semibold">Sluttspill</h2>}
+          {tournament.swiss && <h2 className="font-display text-2xl font-semibold">{tx('Sluttspill', 'Playoffs')}</h2>}
           <div className="rounded-2xl border bg-card/40 p-6">
             <Bracket tournament={tournament} onMatchClick={noop} celebrate={false} />
           </div>

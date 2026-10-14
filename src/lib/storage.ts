@@ -1,4 +1,5 @@
 import type { Match, Tournament, TournamentFormat } from '@/types'
+import { tx } from '@/lib/i18n'
 
 const STORAGE_KEY = 'nome-turnering:v1'
 
@@ -96,10 +97,10 @@ export function importTournamentsJson(raw: string): number {
   try {
     data = JSON.parse(raw)
   } catch {
-    throw new Error('Filen er ikke gyldig JSON')
+    throw new Error(tx('Filen er ikke gyldig JSON', 'The file is not valid JSON'))
   }
   const list = (Array.isArray(data) ? data : [data]).filter(isTournament).map(normalize)
-  if (list.length === 0) throw new Error('Fant ingen turneringer i filen')
+  if (list.length === 0) throw new Error(tx('Fant ingen turneringer i filen', 'No tournaments found in the file'))
   const byId = new Map(loadTournaments().map((t) => [t.id, t]))
   for (const t of list) byId.set(t.id, t)
   saveTournaments([...byId.values()])

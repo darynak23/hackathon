@@ -19,6 +19,9 @@ import { advanceOptions } from '@/lib/tournament'
 import {
   DEFAULT_SCORING,
   DEFAULT_SWISS,
+  formatLabel,
+  seedingLabel,
+  sportName,
   type NewTournamentInput,
   type ParticipantKind,
   type ScoringMode,
@@ -26,6 +29,8 @@ import {
   type Sport,
   type TournamentFormat,
 } from '@/types'
+import { useLanguage } from '@/hooks/useLanguage'
+import { tx } from '@/lib/i18n'
 
 export interface CreateTournamentFormProps {
   onSubmit: (input: NewTournamentInput) => void
@@ -73,11 +78,11 @@ function NumberStepper({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <Button type="button" variant="outline" size="icon" aria-label={`Færre ${label}`} disabled={value <= min} onClick={() => onChange(value - 1)}>
+      <Button type="button" variant="outline" size="icon" aria-label={tx(`Færre ${label}`, `Fewer ${label}`)} disabled={value <= min} onClick={() => onChange(value - 1)}>
         −
       </Button>
       <span className="w-8 text-center text-xl font-bold tabular-nums">{value}</span>
-      <Button type="button" variant="outline" size="icon" aria-label={`Flere ${label}`} disabled={value >= max} onClick={() => onChange(value + 1)}>
+      <Button type="button" variant="outline" size="icon" aria-label={tx(`Flere ${label}`, `More ${label}`)} disabled={value >= max} onClick={() => onChange(value + 1)}>
         +
       </Button>
     </div>
@@ -85,6 +90,7 @@ function NumberStepper({
 }
 
 export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }: CreateTournamentFormProps) {
+  useLanguage()
   const [name, setName] = useState('')
   const [sport, setSport] = useState<Sport>('sjakk')
   const [customSport, setCustomSport] = useState('')
@@ -117,11 +123,11 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
     : (advanceChoices.at(-1) ?? 2)
 
   const errors: string[] = []
-  if (!name.trim()) errors.push('Gi turneringen et navn')
-  if (sport === 'annet' && !customSport.trim()) errors.push('Skriv hvilken sport det er')
-  if (parsed.length < 2) errors.push('Legg inn minst 2 deltakere')
+  if (!name.trim()) errors.push(tx('Gi turneringen et navn', 'Give the tournament a name'))
+  if (sport === 'annet' && !customSport.trim()) errors.push(tx('Skriv hvilken sport det er', 'Enter which sport it is'))
+  if (parsed.length < 2) errors.push(tx('Legg inn minst 2 deltakere', 'Enter at least 2 participants'))
   if (format === 'swissThenElimination' && parsed.length < 3) {
-    errors.push('Swiss med sluttspill krever minst 3 deltakere')
+    errors.push(tx('Swiss med sluttspill krever minst 3 deltakere', 'Swiss with playoffs needs at least 3 participants'))
   }
 
   function changeSport(next: Sport) {
@@ -163,14 +169,14 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
 
   return (
     <form className="grid gap-5" onSubmit={submit} noValidate>
-      <Section step={1} title="Turneringen">
-        <Field label="Navn">
+      <Section step={1} title={tx('Turneringen', 'The tournament')}>
+        <Field label={tx('Navn', 'Name')}>
           <div className="flex gap-2">
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="F.eks. Lunsjcup høst 2026"
-              aria-label="Navn"
+              placeholder={tx('F.eks. Lunsjcup høst 2026', 'E.g. Lunch Cup Autumn 2026')}
+              aria-label={tx('Navn', 'Name')}
               autoFocus
             />
             <Button
@@ -179,11 +185,11 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
               className="shrink-0"
               onClick={() => setSuggestions(suggestNames({ sport, customSport, format }))}
             >
-              <Wand2 /> {suggestions.length > 0 ? 'Nye forslag' : 'Foreslå navn'}
+              <Wand2 /> {suggestions.length > 0 ? tx('Nye forslag', 'New suggestions') : tx('Foreslå navn', 'Suggest names')}
             </Button>
           </div>
           {suggestions.length > 0 && (
-            <div className="flex flex-wrap gap-1.5" aria-label="Navneforslag">
+            <div className="flex flex-wrap gap-1.5" aria-label={tx('Navneforslag', 'Name suggestions')}>
               {suggestions.map((s) => (
                 <button
                   key={s}
@@ -207,60 +213,68 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="basket">Basket</SelectItem>
-                <SelectItem value="sjakk">Sjakk</SelectItem>
-                <SelectItem value="annet">Annet</SelectItem>
+                <SelectItem value="basket">{sportName('basket')}</SelectItem>
+                <SelectItem value="sjakk">{sportName('sjakk')}</SelectItem>
+                <SelectItem value="annet">{sportName('annet')}</SelectItem>
               </SelectContent>
             </Select>
             {sport === 'annet' && (
               <Input
                 value={customSport}
                 onChange={(e) => setCustomSport(e.target.value)}
-                placeholder="Hvilken sport?"
-                aria-label="Hvilken sport"
+                placeholder={tx('Hvilken sport?', 'Which sport?')}
+                aria-label={tx('Hvilken sport', 'Which sport')}
               />
             )}
           </Field>
-          <Field label="Poengsystem" hint="Velges ut fra sport, men kan endres">
+          <Field label={tx('Poengsystem', 'Scoring')} hint={tx('Velges ut fra sport, men kan endres', 'Chosen from the sport, but can be changed')}>
             <SegmentedControl
-              label="Poengsystem"
+              label={tx('Poengsystem', 'Scoring')}
               value={scoring}
               onChange={setScoring}
               options={[
-                { value: 'points', label: 'Poeng' },
-                { value: 'winLoss', label: 'Vinner/taper' },
+                { value: 'points', label: tx('Poeng', 'Points') },
+                { value: 'winLoss', label: tx('Vinner/taper', 'Win/loss') },
               ]}
             />
           </Field>
         </div>
       </Section>
 
-      <Section step={2} title="Format">
+      <Section step={2} title={tx('Format', 'Format')}>
         <SegmentedControl
           label="Format"
           variant="cards"
           value={format}
           onChange={setFormat}
           options={[
-            { value: 'elimination', label: 'Utslag', description: 'Taperen er ute. Finalen i midten av treet.' },
-            { value: 'swiss', label: 'Swiss', description: 'Alle spiller flere runder mot noen med lik stilling.' },
+            {
+              value: 'elimination',
+              label: formatLabel('elimination'),
+              description: tx('Taperen er ute. Finalen i midten av treet.', 'The loser is out. The final is in the middle of the bracket.'),
+            },
+            {
+              value: 'swiss',
+              label: 'Swiss',
+              description: tx('Alle spiller flere runder mot noen med lik stilling.', 'Everyone plays several rounds against opponents with the same record.'),
+            },
             {
               value: 'swissThenElimination',
-              label: 'Swiss + sluttspill',
-              description: 'Swiss-fase først, så går de beste til utslagstreet.',
+              label: formatLabel('swissThenElimination'),
+              description: tx('Swiss-fase først, så går de beste til utslagstreet.', 'A Swiss stage first, then the best go on to the knockout bracket.'),
             },
           ]}
         />
         {usesSwiss && (
           <div className="grid gap-5 rounded-lg border border-dashed p-4 sm:grid-cols-3">
-            <Field label="Seire for å gå videre">
-              <NumberStepper label="seire" value={winsToAdvance} onChange={setWinsToAdvance} min={1} max={5} />
+            <Field label={tx('Seire for å gå videre', 'Wins to advance')}>
+              <NumberStepper label={tx('seire', 'wins')} value={winsToAdvance} onChange={setWinsToAdvance} min={1} max={5} />
             </Field>
-            <Field label="Tap før man er ute">
-              <NumberStepper label="tap" value={lossesToEliminate} onChange={setLossesToEliminate} min={1} max={5} />
+            <Field label={tx('Tap før man er ute', 'Losses before elimination')}>
+              <NumberStepper label={tx('tap', 'losses')} value={lossesToEliminate} onChange={setLossesToEliminate} min={1} max={5} />
             </Field>
             {format === 'swissThenElimination' && (
-              <Field label="Til sluttspill">
+              <Field label={tx('Til sluttspill', 'To the playoffs')}>
                 <Select
                   value={String(effectiveAdvance)}
                   onValueChange={(v) => setAdvanceCount(Number(v))}
@@ -272,7 +286,7 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
                   <SelectContent>
                     {(advanceChoices.length > 0 ? advanceChoices : [2]).map((n) => (
                       <SelectItem key={n} value={String(n)}>
-                        {n} går videre
+                        {tx(`${n} går videre`, `${n} advance`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -283,30 +297,41 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
         )}
       </Section>
 
-      <Section step={3} title="Deltakere">
+      <Section step={3} title={tx('Deltakere', 'Participants')}>
         <SegmentedControl
-          label="Deltakertype"
+          label={tx('Deltakertype', 'Participant type')}
           value={kind}
           onChange={setKind}
           options={[
-            { value: 'individual', label: 'Enkeltpersoner' },
-            { value: 'team', label: 'Lag' },
+            { value: 'individual', label: tx('Enkeltpersoner', 'Individuals') },
+            { value: 'team', label: tx('Lag', 'Teams') },
           ]}
         />
         <div className="grid gap-5 lg:grid-cols-2">
           <Field
-            label={kind === 'team' ? 'Lag, ett per linje' : 'Navn, ett per linje'}
-            hint={`${parsed.length} deltakere${removed > 0 ? `, ${removed} duplikat fjernet` : ''}`}
+            label={
+              kind === 'team'
+                ? tx('Lag, ett per linje', 'Teams, one per line')
+                : tx('Navn, ett per linje', 'Names, one per line')
+            }
+            hint={
+              tx(`${parsed.length} deltakere`, `${parsed.length} participants`) +
+              (removed > 0 ? tx(`, ${removed} duplikat fjernet`, `, ${removed} duplicate removed`) : '')
+            }
           >
             <Textarea
               rows={10}
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder={kind === 'team' ? 'Økonomi: Kari, Ola\nUtvikling: Per, Pål\nSalg' : 'Magnus\nHikaru\nFabiano\nDing'}
+              placeholder={
+                kind === 'team'
+                  ? tx('Økonomi: Kari, Ola\nUtvikling: Per, Pål\nSalg', 'Finance: Kari, Ola\nDevelopment: Per, Paul\nSales')
+                  : 'Magnus\nHikaru\nFabiano\nDing'
+              }
               className="min-h-56 font-mono text-sm"
             />
             {kind === 'team' && (
-              <p className="text-xs text-muted-foreground">Medlemmer er valgfritt: «Lagnavn: navn, navn».</p>
+              <p className="text-xs text-muted-foreground">{tx('Medlemmer er valgfritt: «Lagnavn: navn, navn».', 'Members are optional: “Team name: name, name”.')}</p>
             )}
           </Field>
 
@@ -314,10 +339,10 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
             label="Seeding"
             hint={
               seedingMode === 'seeded'
-                ? 'Øverst er seed 1'
+                ? tx('Øverst er seed 1', 'Top is seed 1')
                 : isShuffled
-                  ? 'Denne rekkefølgen brukes'
-                  : 'Stokkes når turneringen lages'
+                  ? tx('Denne rekkefølgen brukes', 'This order will be used')
+                  : tx('Stokkes når turneringen lages', 'Shuffled when the tournament is created')
             }
           >
             <div className="flex flex-wrap items-center gap-2">
@@ -326,19 +351,19 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
                 value={seedingMode}
                 onChange={changeSeeding}
                 options={[
-                  { value: 'random', label: 'Tilfeldig' },
-                  { value: 'seeded', label: 'Etter seed' },
+                  { value: 'random', label: seedingLabel('random') },
+                  { value: 'seeded', label: seedingLabel('seeded') },
                 ]}
               />
               {seedingMode === 'random' && (
                 <Button type="button" variant="outline" size="sm" onClick={() => setOrder(shuffle(ordered))} disabled={ordered.length < 2}>
-                  <Shuffle /> {isShuffled ? 'Stokk på nytt' : 'Stokk nå'}
+                  <Shuffle /> {isShuffled ? tx('Stokk på nytt', 'Shuffle again') : tx('Stokk nå', 'Shuffle now')}
                 </Button>
               )}
             </div>
             {ordered.length === 0 ? (
               <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                Rekkefølgen vises her når du har lagt inn deltakere.
+                {tx('Rekkefølgen vises her når du har lagt inn deltakere.', 'The order appears here once you have entered participants.')}
               </p>
             ) : (
               <ol className="grid max-h-72 gap-1 overflow-y-auto rounded-lg border bg-background/40 p-1.5">
@@ -348,10 +373,10 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
                     <span className="flex-1 truncate">{n}</span>
                     {seedingMode === 'seeded' && (
                       <span className="flex gap-0.5">
-                        <Button type="button" variant="ghost" size="icon" className="size-7" aria-label={`Flytt ${n} opp`} disabled={i === 0} onClick={() => move(i, -1)}>
+                        <Button type="button" variant="ghost" size="icon" className="size-7" aria-label={tx(`Flytt ${n} opp`, `Move ${n} up`)} disabled={i === 0} onClick={() => move(i, -1)}>
                           <ArrowUp />
                         </Button>
-                        <Button type="button" variant="ghost" size="icon" className="size-7" aria-label={`Flytt ${n} ned`} disabled={i === ordered.length - 1} onClick={() => move(i, 1)}>
+                        <Button type="button" variant="ghost" size="icon" className="size-7" aria-label={tx(`Flytt ${n} ned`, `Move ${n} down`)} disabled={i === ordered.length - 1} onClick={() => move(i, 1)}>
                           <ArrowDown />
                         </Button>
                       </span>
@@ -371,7 +396,7 @@ export function CreateTournamentForm({ onSubmit, initialFormat = 'elimination' }
           </p>
         )}
         <Button type="submit" size="lg" className="font-semibold">
-          Lag turnering
+          {tx('Lag turnering', 'Create tournament')}
         </Button>
       </div>
     </form>

@@ -1,3 +1,4 @@
+import { tx } from '@/lib/i18n'
 export type Sport = 'basket' | 'sjakk' | 'annet'
 
 /** 'points': begge får poeng, høyest vinner. 'winLoss': bare vinner/taper. */
@@ -101,21 +102,25 @@ export interface MatchResult {
   isDraw?: boolean
 }
 
-export const SPORT_LABELS: Record<Sport, string> = {
-  basket: 'Basket',
-  sjakk: 'Sjakk',
-  annet: 'Annet',
+export function sportName(sport: Sport): string {
+  return sport === 'basket' ? tx('Basket', 'Basketball') : sport === 'sjakk' ? tx('Sjakk', 'Chess') : tx('Annet', 'Other')
 }
 
-export const FORMAT_LABELS: Record<TournamentFormat, string> = {
-  elimination: 'Utslag',
-  swiss: 'Swiss',
-  swissThenElimination: 'Swiss + sluttspill',
+export const FORMATS: TournamentFormat[] = ['elimination', 'swiss', 'swissThenElimination']
+
+export function formatLabel(format: TournamentFormat): string {
+  switch (format) {
+    case 'elimination':
+      return tx('Utslag', 'Knockout')
+    case 'swiss':
+      return 'Swiss'
+    case 'swissThenElimination':
+      return tx('Swiss + seedet sluttspill', 'Swiss + seeded playoffs')
+  }
 }
 
-export const SEEDING_LABELS: Record<SeedingMode, string> = {
-  random: 'Tilfeldig',
-  seeded: 'Etter seed',
+export function seedingLabel(mode: SeedingMode): string {
+  return mode === 'random' ? tx('Tilfeldig', 'Random') : tx('Etter seed', 'By seed')
 }
 
 export const DEFAULT_SCORING: Record<Sport, ScoringMode> = {
@@ -127,5 +132,5 @@ export const DEFAULT_SCORING: Record<Sport, ScoringMode> = {
 export const DEFAULT_SWISS: SwissConfig = { winsToAdvance: 3, lossesToEliminate: 3 }
 
 export function sportLabel(t: Pick<Tournament, 'sport' | 'customSport'>): string {
-  return t.sport === 'annet' && t.customSport ? t.customSport : SPORT_LABELS[t.sport]
+  return t.sport === 'annet' && t.customSport ? t.customSport : sportName(t.sport)
 }

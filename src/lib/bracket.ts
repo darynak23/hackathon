@@ -1,3 +1,4 @@
+import { tx } from '@/lib/i18n'
 import type {
   Match,
   MatchResult,
@@ -67,7 +68,7 @@ function emptyMatch(prefix: string, round: number, position: number): Match {
  */
 export function buildBracket(seededIds: string[]): Match[][] {
   const total = roundCount(seededIds.length)
-  if (total === 0) throw new Error('Det trengs minst 2 deltakere')
+  if (total === 0) throw new Error(tx('Det trengs minst 2 deltakere', 'At least 2 participants are needed'))
 
   const size = 2 ** total
   const order = seedOrder(size)
@@ -109,7 +110,7 @@ export function baseTournament(input: NewTournamentInput): Tournament {
 
 /** Lager en ren utslagsturnering. Bruk startTournament i tournament.ts for Swiss-formatene. */
 export function createTournament(input: NewTournamentInput): Tournament {
-  if (input.participants.length < 2) throw new Error('Det trengs minst 2 deltakere')
+  if (input.participants.length < 2) throw new Error(tx('Det trengs minst 2 deltakere', 'At least 2 participants are needed'))
   const base = baseTournament({ ...input, format: 'elimination' })
   return { ...base, rounds: buildBracket(base.participants.map((p) => p.id)) }
 }
@@ -158,9 +159,9 @@ function locate(rounds: Match[][], matchId: string): Match | undefined {
 
 /** Returnerer en feilmelding, eller null når resultatet er gyldig. */
 export function validateResult(match: Match, result: MatchResult, scoring: ScoringMode): string | null {
-  if (result.isDraw) return 'Uavgjort er ikke lov i utslag'
+  if (result.isDraw) return tx('Uavgjort er ikke lov i utslag', 'Draws are not allowed in knockout')
   if (result.winnerId !== match.participantA && result.winnerId !== match.participantB) {
-    return 'Vinneren må være en av de to deltakerne'
+    return tx('Vinneren må være en av de to deltakerne', 'The winner must be one of the two participants')
   }
   if (scoring === 'points') return validateScores(match, result)
   return null
@@ -170,13 +171,13 @@ export function validateResult(match: Match, result: MatchResult, scoring: Scori
 export function validateScores(match: Match, result: MatchResult): string | null {
   const { scoreA, scoreB } = result
   if (scoreA === undefined || scoreB === undefined || Number.isNaN(scoreA) || Number.isNaN(scoreB)) {
-    return 'Skriv inn poeng for begge'
+    return tx('Skriv inn poeng for begge', 'Enter points for both')
   }
-  if (!Number.isInteger(scoreA) || !Number.isInteger(scoreB)) return 'Poeng må være hele tall'
-  if (scoreA < 0 || scoreB < 0) return 'Poeng kan ikke være negative'
-  if (scoreA === scoreB) return 'Uavgjort er ikke lov, det må finnes en vinner'
+  if (!Number.isInteger(scoreA) || !Number.isInteger(scoreB)) return tx('Poeng må være hele tall', 'Points must be whole numbers')
+  if (scoreA < 0 || scoreB < 0) return tx('Poeng kan ikke være negative', 'Points cannot be negative')
+  if (scoreA === scoreB) return tx('Uavgjort er ikke lov, det må finnes en vinner', 'Draws are not allowed, there must be a winner')
   const leader = scoreA > scoreB ? match.participantA : match.participantB
-  if (result.winnerId !== null && result.winnerId !== leader) return 'Vinneren må ha flest poeng'
+  if (result.winnerId !== null && result.winnerId !== leader) return tx('Vinneren må ha flest poeng', 'The winner must have the most points')
   return null
 }
 
@@ -188,8 +189,8 @@ export function validateScores(match: Match, result: MatchResult): string | null
 export function setResult(tournament: Tournament, matchId: string, result: MatchResult): Tournament {
   const rounds = structuredClone(tournament.rounds)
   const match = locate(rounds, matchId)
-  if (!match) throw new Error(`Fant ikke kampen ${matchId}`)
-  if (!isPlayable(match)) throw new Error('Kampen kan ikke spilles ennå')
+  if (!match) throw new Error(tx(`Fant ikke kampen ${matchId}`, `Match ${matchId} not found`))
+  if (!isPlayable(match)) throw new Error(tx('Kampen kan ikke spilles ennå', 'The match cannot be played yet'))
   const error = validateResult(match, result, tournament.scoring)
   if (error) throw new Error(error)
 

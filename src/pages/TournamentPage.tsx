@@ -15,9 +15,12 @@ import { downloadJson } from '@/lib/download'
 import { exportTournamentsJson } from '@/lib/storage'
 import { isMatchDone } from '@/lib/swiss'
 import * as T from '@/lib/tournament'
-import { FORMAT_LABELS, SEEDING_LABELS, sportLabel, type Match, type Tournament } from '@/types'
+import { formatLabel, seedingLabel, sportLabel, type Match, type Tournament } from '@/types'
+import { useLanguage } from '@/hooks/useLanguage'
+import { tx, plural } from '@/lib/i18n'
 
 export function TournamentPage() {
+  useLanguage()
   const { id } = useParams()
   const { tournaments, save } = useTournaments()
   const [openMatchId, setOpenMatchId] = useState<string | null>(null)
@@ -29,11 +32,13 @@ export function TournamentPage() {
   if (!tournament) {
     return (
       <main className="grid place-items-center gap-4 py-20 text-center">
-        <h1 className="font-display text-3xl font-semibold">Fant ikke turneringen</h1>
-        <p className="text-muted-foreground">Den kan ha blitt slettet, eller lenken er feil.</p>
+        <h1 className="font-display text-3xl font-semibold">{tx('Fant ikke turneringen', 'Tournament not found')}</h1>
+        <p className="text-muted-foreground">
+          {tx('Den kan ha blitt slettet, eller lenken er feil.', 'It may have been deleted, or the link is wrong.')}
+        </p>
         <Button asChild variant="outline">
           <Link to="/">
-            <ArrowLeft /> Til forsiden
+            <ArrowLeft /> {tx('Til forsiden', 'Back to home')}
           </Link>
         </Button>
       </main>
@@ -54,7 +59,7 @@ export function TournamentPage() {
       update(action())
       setOpenMatchId(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Noe gikk galt')
+      setError(err instanceof Error ? err.message : tx('Noe gikk galt', 'Something went wrong'))
     }
   }
 
@@ -78,8 +83,10 @@ export function TournamentPage() {
     ) : (
       <div className="grid place-items-center gap-2 rounded-2xl border border-dashed p-12 text-center text-muted-foreground">
         <Trophy className="size-8 text-amber" />
-        <p>Sluttspillet starter når Swiss-fasen er ferdig.</p>
-        <p className="text-sm">De {tournament.advanceCount} beste seedes inn i treet.</p>
+        <p>{tx('Sluttspillet starter når Swiss-fasen er ferdig.', 'The playoffs start when the Swiss stage is finished.')}</p>
+        <p className="text-sm">
+          {tx(`De ${tournament.advanceCount} beste seedes inn i treet.`, `The top ${tournament.advanceCount} are seeded into the bracket.`)}
+        </p>
       </div>
     )
 
@@ -88,16 +95,17 @@ export function TournamentPage() {
       <header className="grid gap-4 md:flex md:items-end md:justify-between">
         <div className="grid gap-2">
           <Link to="/" className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="size-4" /> Alle turneringer
+            <ArrowLeft className="size-4" /> {tx('Alle turneringer', 'All tournaments')}
           </Link>
           <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">{tournament.name}</h1>
           <div className="flex flex-wrap gap-1.5">
             <Badge tone="amber">{sportLabel(tournament)}</Badge>
-            <Badge>{FORMAT_LABELS[tournament.format]}</Badge>
-            <Badge>{SEEDING_LABELS[tournament.seedingMode]}</Badge>
-            <Badge>{tournament.scoring === 'points' ? 'Poeng' : 'Vinner/taper'}</Badge>
+            <Badge>{formatLabel(tournament.format)}</Badge>
+            <Badge>{seedingLabel(tournament.seedingMode)}</Badge>
+            <Badge>{tournament.scoring === 'points' ? tx('Poeng', 'Points') : tx('Vinner/taper', 'Win/loss')}</Badge>
             <Badge>
-              {tournament.participants.length} {tournament.participantKind === 'team' ? 'lag' : 'deltakere'}
+              {tournament.participants.length}{' '}
+              {tournament.participantKind === 'team' ? tx('lag', 'teams') : tx('deltakere', 'participants')}
             </Badge>
           </div>
         </div>
@@ -113,13 +121,18 @@ export function TournamentPage() {
             variant="outline"
             className="text-destructive hover:text-destructive"
             onClick={() => {
-              if (window.confirm('Nullstille alle resultater? Deltakerne og seedene beholdes.')) {
+              if (window.confirm(
+                  tx(
+                    'Nullstille alle resultater? Deltakerne og seedene beholdes.',
+                    'Reset all results? The participants and seeds are kept.',
+                  ),
+                )) {
                 update(T.restartTournament(tournament))
                 setPhaseTab(null)
               }
             }}
           >
-            <RotateCcw /> Nullstill turnering
+            <RotateCcw /> {tx('Nullstill turnering', 'Reset tournament')}
           </Button>
         </div>
       </header>
@@ -139,8 +152,8 @@ export function TournamentPage() {
       {tournament.format === 'swissThenElimination' ? (
         <Tabs value={activeTab} onValueChange={(v) => setPhaseTab(v as T.Phase)} className="gap-4">
           <TabsList>
-            <TabsTrigger value="swiss">1. Swiss-fase</TabsTrigger>
-            <TabsTrigger value="playoffs">2. Sluttspill</TabsTrigger>
+            <TabsTrigger value="swiss">{tx('1. Swiss-fase', '1. Swiss stage')}</TabsTrigger>
+            <TabsTrigger value="playoffs">{tx('2. Sluttspill', '2. Playoffs')}</TabsTrigger>
           </TabsList>
           <TabsContent value="swiss">{swissPanel}</TabsContent>
           <TabsContent value="playoffs">{playoffPanel}</TabsContent>
@@ -173,6 +186,7 @@ function SwissPanel({
   onNextRound: () => void
   onStartPlayoffs: () => void
 }) {
+  useLanguage()
   const stage = tournament.swiss!
   const current = stage.rounds.at(-1) ?? []
   const remaining = current.filter((m) => !isMatchDone(m)).length
@@ -185,23 +199,32 @@ function SwissPanel({
         <div className="text-sm">
           <p className="font-semibold">
             {done
-              ? 'Swiss-fasen er ferdig'
-              : `Runde ${stage.rounds.length}${remaining > 0 ? `: ${remaining} kamp${remaining === 1 ? '' : 'er'} igjen` : ' er ferdig'}`}
+              ? tx('Swiss-fasen er ferdig', 'The Swiss stage is finished')
+              : remaining > 0
+                ? tx(
+                    `Runde ${stage.rounds.length}: ${remaining} ${plural(remaining, ['kamp', 'kamper'], ['match', 'matches'])} igjen`,
+                    `Round ${stage.rounds.length}: ${remaining} ${plural(remaining, ['kamp', 'kamper'], ['match', 'matches'])} left`,
+                  )
+                : tx(`Runde ${stage.rounds.length} er ferdig`, `Round ${stage.rounds.length} is finished`)}
           </p>
           <p className="text-muted-foreground">
-            {stage.config.winsToAdvance} seire for å gå videre, {stage.config.lossesToEliminate} tap og man er ute.
-            {playoffsStarted && ' Sluttspillet er i gang, så Swiss-resultatene er låst.'}
+            {tx(
+              `${stage.config.winsToAdvance} seire for å gå videre, ${stage.config.lossesToEliminate} tap og man er ute.`,
+              `${stage.config.winsToAdvance} wins to advance, ${stage.config.lossesToEliminate} losses and you are out.`,
+            )}
+            {playoffsStarted &&
+              tx(' Sluttspillet er i gang, så Swiss-resultatene er låst.', ' The playoffs have started, so the Swiss results are locked.')}
           </p>
         </div>
         <div className="flex gap-2">
           {!done && (
             <Button onClick={onNextRound} disabled={!T.canStartNextSwissRound(tournament)}>
-              <Play /> Start neste runde
+              <Play /> {tx('Start neste runde', 'Start next round')}
             </Button>
           )}
           {tournament.format === 'swissThenElimination' && done && !playoffsStarted && (
             <Button onClick={onStartPlayoffs}>
-              Gå til sluttspill <ArrowRight />
+              {tx('Gå til sluttspill', 'Go to the playoffs')} <ArrowRight />
             </Button>
           )}
         </div>
@@ -209,8 +232,8 @@ function SwissPanel({
 
       <Tabs defaultValue="rounds" className="gap-4">
         <TabsList>
-          <TabsTrigger value="rounds">Runder</TabsTrigger>
-          <TabsTrigger value="table">Tabell</TabsTrigger>
+          <TabsTrigger value="rounds">{tx('Runder', 'Rounds')}</TabsTrigger>
+          <TabsTrigger value="table">{tx('Tabell', 'Table')}</TabsTrigger>
         </TabsList>
         <TabsContent value="rounds">
           <SwissView tournament={tournament} onMatchClick={onMatchClick} />

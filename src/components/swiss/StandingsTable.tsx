@@ -1,14 +1,17 @@
 import { Badge } from '@/components/Badge'
 import { recordLabel, swissStandings } from '@/lib/swiss'
 import type { Tournament } from '@/types'
+import { useLanguage } from '@/hooks/useLanguage'
+import { tx } from '@/lib/i18n'
 
 const STATUS = {
-  advanced: { label: 'Videre', tone: 'win' },
-  eliminated: { label: 'Ute', tone: 'lose' },
-  active: { label: 'Spiller', tone: 'neutral' },
+  advanced: { label: () => tx('Videre', 'Through'), tone: 'win' },
+  eliminated: { label: () => tx('Ute', 'Out'), tone: 'lose' },
+  active: { label: () => tx('Spiller', 'Playing'), tone: 'neutral' },
 } as const
 
 export function StandingsTable({ tournament }: { tournament: Tournament }) {
+  useLanguage()
   const standings = swissStandings(tournament)
   const showPoints = tournament.scoring === 'points'
 
@@ -18,10 +21,14 @@ export function StandingsTable({ tournament }: { tournament: Tournament }) {
         <thead className="border-b bg-muted/50 text-left text-xs tracking-wide text-muted-foreground uppercase">
           <tr>
             <th className="px-3 py-2.5 font-semibold">#</th>
-            <th className="px-3 py-2.5 font-semibold">Deltaker</th>
-            <th className="px-3 py-2.5 text-center font-semibold">Stilling</th>
-            <th className="px-3 py-2.5 text-center font-semibold" title="Seire / uavgjort / tap">S / U / T</th>
-            <th className="px-3 py-2.5 text-center font-semibold" title="Summen av motstandernes seire">Buchholz</th>
+            <th className="px-3 py-2.5 font-semibold">{tx('Deltaker', 'Participant')}</th>
+            <th className="px-3 py-2.5 text-center font-semibold">{tx('Stilling', 'Record')}</th>
+            <th className="px-3 py-2.5 text-center font-semibold" title={tx('Seire / uavgjort / tap', 'Wins / draws / losses')}>
+              {tx('S / U / T', 'W / D / L')}
+            </th>
+            <th className="px-3 py-2.5 text-center font-semibold" title={tx('Summen av motstandernes seire', 'The sum of the opponents’ wins')}>
+              Buchholz
+            </th>
             {showPoints && <th className="px-3 py-2.5 text-center font-semibold">+/−</th>}
             <th className="px-3 py-2.5 text-right font-semibold">Status</th>
           </tr>
@@ -35,7 +42,7 @@ export function StandingsTable({ tournament }: { tournament: Tournament }) {
                 <td className="px-3 py-2">
                   <span className="font-medium">{r.participant.name}</span>
                   <span className="ml-2 text-xs text-muted-foreground">seed {r.participant.seed}</span>
-                  {r.hadBye && <span className="ml-2 text-xs text-amber">fri runde</span>}
+                  {r.hadBye && <span className="ml-2 text-xs text-amber">{tx('fri runde', 'bye')}</span>}
                 </td>
                 <td className="px-3 py-2 text-center font-bold tabular-nums">
                   {recordLabel(r.score, r.lossScore)}
@@ -48,7 +55,7 @@ export function StandingsTable({ tournament }: { tournament: Tournament }) {
                   <td className="px-3 py-2 text-center tabular-nums">{diff > 0 ? `+${diff}` : diff}</td>
                 )}
                 <td className="px-3 py-2 text-right">
-                  <Badge tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Badge>
+                  <Badge tone={STATUS[r.status].tone}>{STATUS[r.status].label()}</Badge>
                 </td>
               </tr>
             )

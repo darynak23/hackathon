@@ -2,6 +2,8 @@ import { forwardRef } from 'react'
 import { cn } from 'cn'
 import { getParticipant, isPlayable } from '@/lib/bracket'
 import type { Match, Tournament } from '@/types'
+import { useLanguage } from '@/hooks/useLanguage'
+import { tx } from '@/lib/i18n'
 
 export interface MatchCardProps {
   tournament: Tournament
@@ -18,6 +20,7 @@ export const MatchCard = forwardRef<HTMLDivElement, MatchCardProps>(function Mat
   { tournament, match, onClick },
   ref,
 ) {
+  useLanguage()
   const playable = isPlayable(match)
   const clickable = playable && Boolean(onClick)
 
@@ -32,7 +35,7 @@ export const MatchCard = forwardRef<HTMLDivElement, MatchCardProps>(function Mat
       )}
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
-      aria-label={clickable ? 'Åpne resultat for kampen' : undefined}
+      aria-label={clickable ? tx('Åpne resultat for kampen', 'Open the match result') : undefined}
       onClick={clickable ? () => onClick?.(match) : undefined}
       onKeyDown={
         clickable
@@ -88,7 +91,7 @@ function MatchSlot({ tournament, match, id, score }: MatchSlotProps) {
         </span>
       )}
       <span className="flex-1 truncate">
-        {participant ? participant.name : match.walkover ? '–' : 'Venter'}
+        {participant ? participant.name : match.walkover ? '–' : tx('Venter', 'Waiting')}
       </span>
       {isWalkoverWinner && (
         <span className="text-[0.65rem] font-semibold tracking-wide text-[var(--amber)] uppercase">

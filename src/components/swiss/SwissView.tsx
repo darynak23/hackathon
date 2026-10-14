@@ -3,6 +3,8 @@ import { getParticipant } from '@/lib/bracket'
 import { computeRecords, isMatchDone, recordLabel, sortStandings, type SwissRecord } from '@/lib/swiss'
 import { isEditable } from '@/lib/tournament'
 import type { Match, Tournament } from '@/types'
+import { useLanguage } from '@/hooks/useLanguage'
+import { tx } from '@/lib/i18n'
 
 export interface SwissViewProps {
   tournament: Tournament
@@ -32,6 +34,7 @@ function groupBy<T>(items: T[], recordOf: (item: T) => SwissRecord | undefined):
 
 /** Kolonne per runde, med én boks per stilling (0–0, så 1–0 og 0–1 osv.). */
 export function SwissView({ tournament, onMatchClick }: SwissViewProps) {
+  useLanguage()
   const stage = tournament.swiss
   if (!stage) return null
 
@@ -49,9 +52,9 @@ export function SwissView({ tournament, onMatchClick }: SwissViewProps) {
         return (
           <section key={r} className="flex w-60 shrink-0 flex-col gap-3">
             <header className="flex items-center justify-between px-1">
-              <h3 className="font-display text-sm font-semibold tracking-wide uppercase">Runde {r + 1}</h3>
+              <h3 className="font-display text-sm font-semibold tracking-wide uppercase">{tx(`Runde ${r + 1}`, `Round ${r + 1}`)}</h3>
               <span className={cn('text-xs', done ? 'text-win' : 'text-muted-foreground')}>
-                {done ? 'Ferdig' : `${round.filter(isMatchDone).length}/${round.length}`}
+                {done ? tx('Ferdig', 'Done') : `${round.filter(isMatchDone).length}/${round.length}`}
               </span>
             </header>
             {groups.map((group) => (
@@ -80,13 +83,13 @@ export function SwissView({ tournament, onMatchClick }: SwissViewProps) {
       {decided.length > 0 && (
         <section className="flex w-56 shrink-0 flex-col gap-3">
           <header className="px-1">
-            <h3 className="font-display text-sm font-semibold tracking-wide uppercase">Avgjort</h3>
+            <h3 className="font-display text-sm font-semibold tracking-wide uppercase">{tx('Avgjort', 'Decided')}</h3>
           </header>
           {advanced.map((group) => (
-            <DecidedBox key={`a${group.key}`} tone="win" label={`Videre ${recordLabel(group.score, group.lossScore)}`} records={group.items} />
+            <DecidedBox key={`a${group.key}`} tone="win" label={`${tx('Videre', 'Through')} ${recordLabel(group.score, group.lossScore)}`} records={group.items} />
           ))}
           {eliminated.map((group) => (
-            <DecidedBox key={`e${group.key}`} tone="lose" label={`Ute ${recordLabel(group.score, group.lossScore)}`} records={group.items} />
+            <DecidedBox key={`e${group.key}`} tone="lose" label={`${tx('Ute', 'Out')} ${recordLabel(group.score, group.lossScore)}`} records={group.items} />
           ))}
         </section>
       )}
@@ -135,7 +138,7 @@ function SwissMatch({
     return (
       <div className="flex items-center justify-between rounded-lg border border-dashed px-2.5 py-1.5 text-sm">
         <span className="truncate font-medium">{a?.name ?? b?.name}</span>
-        <span className="text-[0.65rem] font-semibold tracking-wide text-amber uppercase">Fri runde</span>
+        <span className="text-[0.65rem] font-semibold tracking-wide text-amber uppercase">{tx('Fri runde', 'Bye')}</span>
       </div>
     )
   }
@@ -174,7 +177,7 @@ function SwissMatch({
             ) : tournament.scoring === 'points' && score !== undefined ? (
               <span className="tabular-nums">{score}</span>
             ) : won ? (
-              <span className="text-xs text-amber">S</span>
+              <span className="text-xs text-amber">{tx('S', 'W')}</span>
             ) : null}
           </div>
         )

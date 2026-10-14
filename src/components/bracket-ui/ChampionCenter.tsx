@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
 import type { Participant } from '@/types'
+import { useLanguage } from '@/hooks/useLanguage'
+import { tx } from '@/lib/i18n'
 
 export interface ChampionCenterProps {
   winner: Participant | null
@@ -10,6 +12,7 @@ export interface ChampionCenterProps {
 
 /** Pokal og vinnernavn i midten av treet, med konfetti når finalen er avgjort. */
 export function ChampionCenter({ winner, celebrate = true }: ChampionCenterProps) {
+  useLanguage()
   const ref = useRef<HTMLDivElement>(null)
   const celebratedFor = useRef<string | null>(null)
 
@@ -46,7 +49,7 @@ export function ChampionCenter({ winner, celebrate = true }: ChampionCenterProps
           {winner.name}
         </span>
       ) : (
-        <span className="text-sm text-muted-foreground italic">Ingen vinner ennå</span>
+        <span className="text-sm text-muted-foreground italic">{tx('Ingen vinner ennå', 'No winner yet')}</span>
       )}
     </div>
   )

@@ -1,5 +1,6 @@
 import type { Match, MatchResult, Participant, ScoringMode, SwissConfig, Tournament } from '@/types'
 import { validateScores } from './bracket'
+import { tx } from '@/lib/i18n'
 
 // Swiss-logikk (e-sportvarianten): man går videre etter winsToAdvance seire og
 // er ute etter lossesToEliminate tap. Uavgjort teller som en halv seier og et halvt tap.
@@ -212,9 +213,9 @@ function findLastIndex<T>(items: T[], predicate: (item: T) => boolean): number {
 /** Returnerer en feilmelding, eller null når resultatet er gyldig. Uavgjort er lov i vinner/taper-modus. */
 export function validateSwissResult(match: Match, result: MatchResult, scoring: ScoringMode): string | null {
   if (scoring === 'winLoss' && result.isDraw) return null
-  if (result.isDraw) return 'Uavgjort er ikke lov i poengmodus'
+  if (result.isDraw) return tx('Uavgjort er ikke lov i poengmodus', 'Draws are not allowed in points mode')
   if (result.winnerId !== match.participantA && result.winnerId !== match.participantB) {
-    return 'Vinneren må være en av de to deltakerne'
+    return tx('Vinneren må være en av de to deltakerne', 'The winner must be one of the two participants')
   }
   return scoring === 'points' ? validateScores(match, result) : null
 }

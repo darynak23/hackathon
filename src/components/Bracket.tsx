@@ -8,6 +8,8 @@ import type { MatchRefMap } from '@/components/bracket-ui/useConnectorLines'
 import { getChampion } from '@/lib/bracket'
 import { columnHeight, roundName, splitBracket } from '@/lib/layout'
 import type { Match, Tournament } from '@/types'
+import { useLanguage } from '@/hooks/useLanguage'
+import { tx } from '@/lib/i18n'
 
 // Eies av person 3. Props er låst, innholdet er det speilvendte treet.
 
@@ -23,6 +25,7 @@ export interface BracketProps {
  * finalen i midten, høyre halvdel speilvendt.
  */
 export function Bracket({ tournament, onMatchClick, celebrate = true }: BracketProps) {
+  useLanguage()
   const containerRef = useRef<HTMLDivElement>(null)
   const matchRefs = useRef<MatchRefMap>(new Map())
 
@@ -31,7 +34,7 @@ export function Bracket({ tournament, onMatchClick, celebrate = true }: BracketP
   const lines = useConnectorLines({ containerRef, matchRefs, tournament, columns })
 
   if (columns.length === 0) {
-    return <p className="text-muted-foreground italic">Ingen kamper å vise ennå.</p>
+    return <p className="text-muted-foreground italic">{tx('Ingen kamper å vise ennå.', 'No matches to show yet.')}</p>
   }
 
   const champion = getChampion(tournament)

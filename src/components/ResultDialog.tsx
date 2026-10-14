@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input'
 import { getParticipant } from '@/lib/bracket'
 import { phaseOf, validate } from '@/lib/tournament'
 import type { Match, MatchResult, Tournament } from '@/types'
+import { useLanguage } from '@/hooks/useLanguage'
+import { tx } from '@/lib/i18n'
 
 export interface ResultDialogProps {
   tournament: Tournament
@@ -41,6 +43,7 @@ function ResultForm({
   onSave,
   onClear,
 }: Omit<ResultDialogProps, 'match' | 'onClose'> & { match: Match }) {
+  useLanguage()
   const a = getParticipant(tournament, match.participantA)
   const b = getParticipant(tournament, match.participantB)
   const [scoreA, setScoreA] = useState(match.scoreA?.toString() ?? '')
@@ -56,14 +59,14 @@ function ResultForm({
   const header = (
     <DialogHeader>
       <DialogTitle className="font-display text-xl">
-        {a.name} <span className="text-muted-foreground">mot</span> {b.name}
+        {a.name} <span className="text-muted-foreground">{tx('mot', 'vs')}</span> {b.name}
       </DialogTitle>
       <DialogDescription>
         {tournament.scoring === 'points'
-          ? 'Skriv inn poengene. Vinneren regnes ut automatisk.'
+          ? tx('Skriv inn poengene. Vinneren regnes ut automatisk.', 'Enter the points. The winner is worked out automatically.')
           : allowDraw
-            ? 'Klikk på vinneren, eller velg uavgjort.'
-            : 'Klikk på vinneren.'}
+            ? tx('Klikk på vinneren, eller velg uavgjort.', 'Click the winner, or choose a draw.')
+            : tx('Klikk på vinneren.', 'Click the winner.')}
       </DialogDescription>
     </DialogHeader>
   )
@@ -74,21 +77,24 @@ function ResultForm({
         <div className="grid gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
           <p>
             {inSwiss
-              ? 'Resultatet fjernes fra runden.'
-              : 'Resultatet fjernes, og alle kampene etter i treet som vinneren hadde gått videre til, nullstilles også.'}
+              ? tx('Resultatet fjernes fra runden.', 'The result is removed from the round.')
+              : tx(
+                  'Resultatet fjernes, og alle kampene etter i treet som vinneren hadde gått videre til, nullstilles også.',
+                  'The result is removed, and all later matches in the bracket that the winner had advanced to are reset too.',
+                )}
           </p>
           <div className="flex gap-2">
             <Button type="button" variant="destructive" size="sm" onClick={onClear}>
-              Fjern resultat
+              {tx('Fjern resultat', 'Remove result')}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmClear(false)}>
-              Avbryt
+              {tx('Avbryt', 'Cancel')}
             </Button>
           </div>
         </div>
       ) : (
         <Button type="button" variant="ghost" className="text-destructive" onClick={() => setConfirmClear(true)}>
-          Fjern resultat
+          {tx('Fjern resultat', 'Remove result')}
         </Button>
       )}
     </div>
@@ -113,7 +119,7 @@ function ResultForm({
               >
                 <span>
                   {p.name}
-                  {isWinner && <span className="mt-1 block text-xs font-medium text-amber">Vinner</span>}
+                  {isWinner && <span className="mt-1 block text-xs font-medium text-amber">{tx('Vinner', 'Winner')}</span>}
                 </span>
               </button>
             )
@@ -125,7 +131,7 @@ function ResultForm({
             variant={match.isDraw ? 'default' : 'outline'}
             onClick={() => onSave({ winnerId: null, isDraw: true })}
           >
-            Uavgjort (½ poeng hver)
+            {tx('Uavgjort (½ poeng hver)', 'Draw (½ point each)')}
           </Button>
         )}
         <DialogFooter>{clearSection}</DialogFooter>
@@ -175,12 +181,14 @@ function ResultForm({
         <span className="col-start-2 row-start-1 pb-4 text-muted-foreground">–</span>
       </div>
       <p role="alert" className={cn('min-h-5 text-sm', error ? 'text-destructive' : 'text-muted-foreground')}>
-        {error ?? (canSave ? `${getParticipant(tournament, result.winnerId)?.name} vinner` : '')}
+        {error ?? (canSave
+          ? tx(`${getParticipant(tournament, result.winnerId)?.name} vinner`, `${getParticipant(tournament, result.winnerId)?.name} wins`)
+          : '')}
       </p>
       <DialogFooter className="items-end">
         {clearSection}
         <Button type="submit" disabled={!canSave}>
-          Lagre
+          {tx('Lagre', 'Save')}
         </Button>
       </DialogFooter>
     </form>

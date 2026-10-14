@@ -8,6 +8,9 @@
     <script>
       try {
         const stored = localStorage.getItem('nome-tema')
+        const lang = localStorage.getItem('nome-sprak') === 'en' ? 'en' : 'no'
+        document.documentElement.lang = lang
+        document.title = lang === 'en' ? 'Nome Games – Tournament' : 'Nome Games – Turnering'
         const dark = stored ? stored === 'on' || stored === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
         document.documentElement.classList.toggle('dark', dark)
         document.documentElement.classList.toggle('dramatic', localStorage.getItem('nome-dramatisk') === 'on')

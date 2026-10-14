@@ -2,6 +2,7 @@ import type { Match, MatchResult, NewTournamentInput, Participant, Tournament } 
 import { DEFAULT_SWISS } from '@/types'
 import * as bracket from './bracket'
 import * as swiss from './swiss'
+import { tx } from '@/lib/i18n'
 
 // Funksjonene sidene bruker. De sender videre til utslag (bracket.ts) eller Swiss (swiss.ts)
 // og håndterer overgangen fra Swiss til sluttspill.
@@ -31,7 +32,7 @@ export function advanceOptions(participantCount: number): number[] {
 }
 
 export function startTournament(input: NewTournamentInput): Tournament {
-  if (input.participants.length < 2) throw new Error('Det trengs minst 2 deltakere')
+  if (input.participants.length < 2) throw new Error(tx('Det trengs minst 2 deltakere', 'At least 2 participants are needed'))
   const format = input.format ?? 'elimination'
   if (format === 'elimination') {
     return { ...bracket.createTournament(input), seedingMode: input.seedingMode ?? 'seeded' }
@@ -82,8 +83,8 @@ export function recordResult(t: Tournament, matchId: string, result: MatchResult
   if (phaseOf(matchId) === 'playoffs') return bracket.setResult(t, matchId, result)
 
   const match = findMatch(t, matchId)
-  if (!match || !t.swiss) throw new Error(`Fant ikke kampen ${matchId}`)
-  if (!isEditable(t, match)) throw new Error('Bare kamper i siste Swiss-runde kan endres')
+  if (!match || !t.swiss) throw new Error(tx(`Fant ikke kampen ${matchId}`, `Match ${matchId} not found`))
+  if (!isEditable(t, match)) throw new Error(tx('Bare kamper i siste Swiss-runde kan endres', 'Only matches in the last Swiss round can be changed'))
   const error = swiss.validateSwissResult(match, result, t.scoring)
   if (error) throw new Error(error)
 
@@ -169,8 +170,10 @@ export function currentPhase(t: Tournament): Phase {
 
 export function statusLabel(t: Tournament): string {
   const winner = getWinner(t)
-  if (winner) return 'Ferdig'
-  if (currentPhase(t) === 'swiss' && t.swiss) return `Swiss, runde ${t.swiss.rounds.length}`
+  if (winner) return tx('Ferdig', 'Finished')
+  if (currentPhase(t) === 'swiss' && t.swiss) return tx(`Swiss, runde ${t.swiss.rounds.length}`, `Swiss, round ${t.swiss.rounds.length}`)
   const remaining = t.rounds.flat().filter((m) => m.winnerId === null).length
-  return remaining === 1 ? 'Finale' : `Sluttspill, ${remaining} kamper igjen`
+  return remaining === 1
+    ? tx('Finale', 'Final')
+    : tx(`Sluttspill, ${remaining} kamper igjen`, `Playoffs, ${remaining} matches left`)
 }
