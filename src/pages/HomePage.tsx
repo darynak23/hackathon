@@ -9,53 +9,52 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useTournaments } from '@/hooks/useTournaments'
 import { getChampion } from '@/lib/bracket'
 import { createDemoTournaments } from '@/lib/demo'
 import { downloadJson } from '@/lib/download'
+import { sportName, translateError } from '@/lib/i18n'
 import { exportTournamentsJson } from '@/lib/storage'
-import { sportLabel } from '@/types'
 
 export function HomePage() {
   const { tournaments, saveMany, remove, importJson } = useTournaments()
   const fileInput = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const { t } = useLanguage()
 
   async function handleImport(file: File) {
     try {
       const count = importJson(await file.text())
-      setMessage(`Importerte ${count} turnering${count === 1 ? '' : 'er'}.`)
+      setMessage(t.imported(count))
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Kunne ikke importere filen')
+      setMessage(err instanceof Error ? translateError(t, err.message) : t.importFailed)
     }
   }
 
   return (
     <main className="grid gap-8">
       <header className="brand">
-        <h1 className="brand-title">Turneringer</h1>
-        <p className="brand-lead">
-          Lag utslagsturneringer for basket, sjakk og alt annet. Resultatene lagres lokalt i
-          nettleseren.
-        </p>
+        <h1 className="brand-title">{t.tournaments}</h1>
+        <p className="brand-lead">{t.homeLead}</p>
       </header>
 
       <div className="flex flex-wrap gap-2">
         <Button asChild>
-          <Link to="/ny">Ny turnering</Link>
+          <Link to="/ny">{t.newTournament}</Link>
         </Button>
         <Button variant="outline" onClick={() => saveMany(createDemoTournaments())}>
-          Fyll inn demo
+          {t.fillDemo}
         </Button>
         <Button
           variant="outline"
           disabled={tournaments.length === 0}
-          onClick={() => downloadJson('turneringer.json', exportTournamentsJson(tournaments))}
+          onClick={() => downloadJson(t.exportFileName, exportTournamentsJson(tournaments))}
         >
-          Eksporter
+          {t.export}
         </Button>
         <Button variant="outline" onClick={() => fileInput.current?.click()}>
-          Importer
+          {t.import}
         </Button>
         <input
           ref={fileInput}
@@ -78,48 +77,48 @@ export function HomePage() {
 
       {tournaments.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
-          <p className="mb-4">Ingen turneringer ennå.</p>
+          <p className="mb-4">{t.noTournaments}</p>
           <Button asChild>
-            <Link to="/ny">Lag den første</Link>
+            <Link to="/ny">{t.createFirst}</Link>
           </Button>
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {tournaments.map((t) => {
-            const champion = getChampion(t)
+          {tournaments.map((tournament) => {
+            const champion = getChampion(tournament)
             return (
-              <li key={t.id}>
+              <li key={tournament.id}>
                 <Card className="relative h-full transition-colors hover:border-ring">
                   <CardHeader>
                     <CardTitle>
-                      <Link to={`/turnering/${t.id}`} className="after:absolute after:inset-0">
-                        {t.name}
+                      <Link to={`/turnering/${tournament.id}`} className="after:absolute after:inset-0">
+                        {tournament.name}
                       </Link>
                     </CardTitle>
                     <CardDescription>
-                      {sportLabel(t)} · {t.participants.length} deltakere
+                      {sportName(t, tournament)} · {t.participants(tournament.participants.length)}
                     </CardDescription>
                     <CardAction>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="relative z-10"
-                        aria-label={`Slett ${t.name}`}
+                        aria-label={t.deleteLabel(tournament.name)}
                         onClick={() => {
-                          if (window.confirm(`Slette «${t.name}»?`)) remove(t.id)
+                          if (window.confirm(t.confirmDelete(tournament.name))) remove(tournament.id)
                         }}
                       >
-                        Slett
+                        {t.delete}
                       </Button>
                     </CardAction>
                   </CardHeader>
                   <CardContent className="text-sm">
                     {champion ? (
                       <span>
-                        Vinner: <strong className="text-[var(--amber)]">{champion.name}</strong>
+                        {t.winner}: <strong className="text-[var(--amber)]">{champion.name}</strong>
                       </span>
                     ) : (
-                      <span className="text-muted-foreground">Pågår</span>
+                      <span className="text-muted-foreground">{t.inProgress}</span>
                     )}
                   </CardContent>
                 </Card>

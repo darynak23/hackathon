@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
+import { useLanguage } from '@/hooks/useLanguage'
 import type { Participant } from '@/types'
 
 export interface ChampionCenterProps {
@@ -10,6 +11,7 @@ export interface ChampionCenterProps {
 export function ChampionCenter({ winner }: ChampionCenterProps) {
   const ref = useRef<HTMLDivElement>(null)
   const celebratedFor = useRef<string | null>(null)
+  const { t } = useLanguage()
 
   useEffect(() => {
     if (!winner) {
@@ -43,7 +45,7 @@ export function ChampionCenter({ winner }: ChampionCenterProps) {
           {winner.name}
         </span>
       ) : (
-        <span className="text-sm text-muted-foreground italic">Ingen vinner ennå</span>
+        <span className="text-sm text-muted-foreground italic">{t.noWinnerYet}</span>
       )}
     </div>
   )

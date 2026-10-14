@@ -9,7 +9,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { useLanguage } from '@/hooks/useLanguage'
 import { getParticipant, validateResult } from '@/lib/bracket'
+import { translateError } from '@/lib/i18n'
 import type { Match, MatchResult, Tournament } from '@/types'
 
 // Eies av person 4. Props er låst.
@@ -51,23 +53,24 @@ function ResultForm({
   const b = getParticipant(tournament, match.participantB)
   const [scoreA, setScoreA] = useState(match.scoreA?.toString() ?? '')
   const [scoreB, setScoreB] = useState(match.scoreB?.toString() ?? '')
+  const { t } = useLanguage()
 
   if (!a || !b) return null
 
   const header = (
     <DialogHeader>
       <DialogTitle>
-        {a.name} mot {b.name}
+        {a.name} {t.versus} {b.name}
       </DialogTitle>
       <DialogDescription>
-        {tournament.scoring === 'points' ? 'Skriv inn poeng.' : 'Klikk på vinneren.'}
+        {tournament.scoring === 'points' ? t.enterScores : t.clickWinner}
       </DialogDescription>
     </DialogHeader>
   )
 
   const clearButton = match.winnerId && (
     <Button variant="destructive" onClick={onClear}>
-      Fjern resultat
+      {t.clearResult}
     </Button>
   )
 
@@ -123,12 +126,12 @@ function ResultForm({
         </label>
       </div>
       {validation && !validation.ok && (
-        <p className="text-sm text-destructive">{validation.error}</p>
+        <p className="text-sm text-destructive">{translateError(t, validation.error)}</p>
       )}
       <DialogFooter>
         {clearButton}
         <Button type="submit" disabled={!validation?.ok}>
-          Lagre
+          {t.save}
         </Button>
       </DialogFooter>
     </form>

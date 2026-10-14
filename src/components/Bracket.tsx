@@ -5,8 +5,10 @@ import { Connectors } from '@/components/bracket-ui/Connectors'
 import { MatchCard } from '@/components/bracket-ui/MatchCard'
 import { useConnectorLines } from '@/components/bracket-ui/useConnectorLines'
 import type { MatchRefMap } from '@/components/bracket-ui/useConnectorLines'
+import { useLanguage } from '@/hooks/useLanguage'
 import { getChampion } from '@/lib/bracket'
-import { columnHeight, roundName, splitBracket } from '@/lib/layout'
+import { roundLabel } from '@/lib/i18n'
+import { columnHeight, splitBracket } from '@/lib/layout'
 import type { Match, Tournament } from '@/types'
 
 // Eies av person 3. Props er låst, innholdet er det speilvendte treet.
@@ -23,12 +25,13 @@ export interface BracketProps {
 export function Bracket({ tournament, onMatchClick }: BracketProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const matchRefs = useRef<MatchRefMap>(new Map())
+  const { t } = useLanguage()
 
   const { columns, roundCount, round0CountPerSide } = splitBracket(tournament)
   const lines = useConnectorLines({ containerRef, matchRefs, tournament, columns })
 
   if (columns.length === 0) {
-    return <p className="text-muted-foreground italic">Ingen kamper å vise ennå.</p>
+    return <p className="text-muted-foreground italic">{t.noMatches}</p>
   }
 
   const champion = getChampion(tournament)
@@ -39,7 +42,7 @@ export function Bracket({ tournament, onMatchClick }: BracketProps) {
       {columns.map((column) => (
         <div key={`${column.side}-${column.round}`} className="flex flex-col items-center">
           <h3 className="mb-3 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            {roundName(column.round, roundCount)}
+            {roundLabel(t, column.round, roundCount)}
           </h3>
           <div
             className="flex flex-col justify-around"

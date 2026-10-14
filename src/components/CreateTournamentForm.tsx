@@ -9,7 +9,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { DEFAULT_SCORING, SPORT_LABELS, type NewTournamentInput, type Sport } from '@/types'
+import { useLanguage } from '@/hooks/useLanguage'
+import { DEFAULT_SCORING, type NewTournamentInput, type Sport } from '@/types'
 
 // Eies av person 4. Props er låst.
 
@@ -21,6 +22,7 @@ export function CreateTournamentForm({ onSubmit }: CreateTournamentFormProps) {
   const [name, setName] = useState('')
   const [sport, setSport] = useState<Sport>('sjakk')
   const [participantsText, setParticipantsText] = useState('')
+  const { t } = useLanguage()
 
   const names = [...new Set(participantsText.split('\n').map((s) => s.trim()).filter(Boolean))]
   const canSubmit = name.trim() !== '' && names.length >= 2
@@ -42,17 +44,17 @@ export function CreateTournamentForm({ onSubmit }: CreateTournamentFormProps) {
       }}
     >
       <label className="grid gap-1 text-sm">
-        Navn
+        {t.name}
         <Input value={name} onChange={(e) => setName(e.target.value)} />
       </label>
       <label className="grid gap-1 text-sm">
-        Sport
+        {t.sport}
         <Select value={sport} onValueChange={(v) => setSport(v as Sport)}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(SPORT_LABELS).map(([id, label]) => (
+            {Object.entries(t.sports).map(([id, label]) => (
               <SelectItem key={id} value={id}>
                 {label}
               </SelectItem>
@@ -61,7 +63,7 @@ export function CreateTournamentForm({ onSubmit }: CreateTournamentFormProps) {
         </Select>
       </label>
       <label className="grid gap-1 text-sm">
-        Deltakere (én per linje)
+        {t.participantsOnePerLine}
         <Textarea
           rows={8}
           value={participantsText}
@@ -69,7 +71,7 @@ export function CreateTournamentForm({ onSubmit }: CreateTournamentFormProps) {
         />
       </label>
       <Button type="submit" disabled={!canSubmit}>
-        Lag turnering ({names.length} deltakere)
+        {t.createTournament(names.length)}
       </Button>
     </form>
   )

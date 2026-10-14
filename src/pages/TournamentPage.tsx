@@ -3,11 +3,13 @@ import { Link, useParams } from 'react-router-dom'
 import { Bracket } from '@/components/Bracket'
 import { ResultDialog } from '@/components/ResultDialog'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/hooks/useLanguage'
 import { useTournaments } from '@/hooks/useTournaments'
 import { clearResult, createTournament, findMatch, getChampion, setResult } from '@/lib/bracket'
 import { downloadJson } from '@/lib/download'
+import { sportName } from '@/lib/i18n'
 import { exportTournamentsJson } from '@/lib/storage'
-import { sportLabel, type Tournament } from '@/types'
+import type { Tournament } from '@/types'
 
 function resetTournament(t: Tournament): Tournament {
   const fresh = createTournament({
@@ -26,15 +28,16 @@ export function TournamentPage() {
   const { id } = useParams()
   const { tournaments, save } = useTournaments()
   const [openMatchId, setOpenMatchId] = useState<string | null>(null)
+  const { t } = useLanguage()
 
   const tournament = tournaments.find((t) => t.id === id)
 
   if (!tournament) {
     return (
       <main className="grid gap-4">
-        <h1 className="brand-title">Fant ikke turneringen</h1>
+        <h1 className="brand-title">{t.tournamentNotFound}</h1>
         <Button asChild variant="outline" className="w-fit">
-          <Link to="/">Tilbake til forsiden</Link>
+          <Link to="/">{t.backToHome}</Link>
         </Button>
       </main>
     )
@@ -49,8 +52,8 @@ export function TournamentPage() {
         <div>
           <h1 className="brand-title !mb-1">{tournament.name}</h1>
           <p className="text-muted-foreground">
-            {sportLabel(tournament)} · {tournament.participants.length} deltakere ·{' '}
-            {tournament.scoring === 'points' ? 'Poeng' : 'Vinner/taper'}
+            {sportName(t, tournament)} · {t.participants(tournament.participants.length)} ·{' '}
+            {tournament.scoring === 'points' ? t.scoringPoints : t.scoringWinLoss}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -60,24 +63,24 @@ export function TournamentPage() {
               downloadJson(`${tournament.name}.json`, exportTournamentsJson([tournament]))
             }
           >
-            Eksporter
+            {t.export}
           </Button>
           <Button
             variant="destructive"
             onClick={() => {
-              if (window.confirm('Nullstille alle resultater? Deltakerne beholdes.')) {
+              if (window.confirm(t.confirmReset)) {
                 save(resetTournament(tournament))
               }
             }}
           >
-            Nullstill turnering
+            {t.resetTournament}
           </Button>
         </div>
       </header>
 
       {champion && (
         <p className="text-lg">
-          Vinner: <strong className="text-[var(--amber)]">{champion.name}</strong>
+          {t.winner}: <strong className="text-[var(--amber)]">{champion.name}</strong>
         </p>
       )}
 

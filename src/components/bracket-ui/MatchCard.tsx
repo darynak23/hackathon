@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import { cn } from 'cn'
+import { useLanguage } from '@/hooks/useLanguage'
 import { getParticipant, isPlayable } from '@/lib/bracket'
 import type { Match, Tournament } from '@/types'
 
@@ -20,6 +21,7 @@ export const MatchCard = forwardRef<HTMLDivElement, MatchCardProps>(function Mat
 ) {
   const playable = isPlayable(match)
   const clickable = playable && Boolean(onClick)
+  const { t } = useLanguage()
 
   return (
     <div
@@ -30,7 +32,7 @@ export const MatchCard = forwardRef<HTMLDivElement, MatchCardProps>(function Mat
       )}
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
-      aria-label={clickable ? 'Åpne resultat for kampen' : undefined}
+      aria-label={clickable ? t.openMatch : undefined}
       onClick={clickable ? () => onClick?.(match) : undefined}
       onKeyDown={
         clickable
@@ -71,6 +73,7 @@ function MatchSlot({ tournament, match, id, score }: MatchSlotProps) {
   const participant = getParticipant(tournament, id)
   const isWinner = match.winnerId !== null && match.winnerId === id
   const isWalkoverWinner = id !== null && match.isWalkover
+  const { t } = useLanguage()
 
   return (
     <div
@@ -81,11 +84,11 @@ function MatchSlot({ tournament, match, id, score }: MatchSlotProps) {
       )}
     >
       <span className="flex-1 truncate">
-        {participant ? participant.name : match.isWalkover ? '–' : 'Venter'}
+        {participant ? participant.name : match.isWalkover ? '–' : t.waiting}
       </span>
       {isWalkoverWinner && (
         <span className="text-[0.65rem] font-semibold tracking-wide text-[var(--amber)] uppercase">
-          Walkover
+          {t.walkover}
         </span>
       )}
       {tournament.scoring === 'points' && participant && (
